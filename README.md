@@ -54,7 +54,7 @@ The following packages should be installed in the same directory as this
 README.md file. The contents of the following code block and be copied and
 pasted into shell:
 
-```json
+```shell
 mkdir third_party
 
 # dateutil
@@ -134,7 +134,7 @@ Running the bundled unit tests helps verify that all the libraries have been
 installed correctly. To run the unit tests locally you'll need to have the App
 Engine SDK libraries in your Python path.
 
-```json
+```shell
 # For example, suppose the App Engine SDK was installed in /usr/local/google_appengine
 
 GAE_PATH=/usr/local/google_appengine; export PYTHONPATH=$GAE_PATH:.; for fil in $GAE_PATH/lib/*; do export PYTHONPATH=$fil:$PYTHONPATH; done;
@@ -143,7 +143,7 @@ GAE_PATH=/usr/local/google_appengine; export PYTHONPATH=$GAE_PATH:.; for fil in 
 
 You can run the unit tests with:
 
-```json
+```shell
 (cd app; python -m unittest discover src '*_test.py')
 ```
 
@@ -159,8 +159,7 @@ document).
 [install gsutil]. If you do have it, you might need to run
 `gsutil config `to set up the credentials):
 
-```json
-
+```shell
 gsutil mb gs://example/
 gsutil acl ch -u example@appspot.gserviceaccount.com:FC  gs://example
 gsutil defacl ch -u example@appspot.gserviceaccount.com:FC  gs://example
@@ -183,14 +182,14 @@ Google Cloud Storage JSON API.
 9. Replace the application name in the .yaml files. So for example, if your app
 is called example.appspot.com:
 
-```json
+```shell
 perl -p -i~ -e 's/INSERT_YOUR_APPLICATION_NAME_HERE/example/' app/app.yaml app/backend.yaml
 ```
 
 
 1. Now publish your application:
 
-```json
+```shell
 appcfg.py update --oauth2 app/app.yaml app/backend.yaml
 ```
 
@@ -218,7 +217,7 @@ Hadoop cluster size you will be using. We can use the same project as we did for
 BigQuery. As before, the following script can be copied and pasted into a shell
 as-is:
 
-```json
+```shell
 # Setup variables
 BUCKET=gs://example  # Change this.
 PROJECT=gce-example  # Change this.

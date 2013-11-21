@@ -14,7 +14,9 @@
 
 """Pipeline config linter unit tests."""
 
+import json
 import os
+import re
 
 
 
@@ -34,12 +36,31 @@ class MockPipeline(object):
 class LintPipelineTest(basetest.TestCase):
   """Tests the pipeline linter."""
 
+  def getUnterminatedStringMessage(self, input_string):
+    # Sadly json returns different indexes from different versions of python.
+    # linux Python 2.7.3 json 2.0.9:
+    # Unterminated string starting at: 'line 1 column 0 (char 0)'
+    # Mac Python 2.7.5 json 2.0.9
+    # Unterminated string starting at: 'line 1 column 1 (char 0)'
+    # So we work out the right answer here.
+    try:
+      json.loads(input_string)
+    except ValueError as e:
+      if re.match('Unterminated string starting at: '
+                  r'line \d+ column \d+ \(char \d+\)', e.message):
+        return e.message
+      else:
+        raise ValueError('expected %r to raise a ValueError that looked like '
+                         '"Unterminated string" but got %r' %
+                         (input_string, e.message))
+    raise ValueError('expected %r to raise a ValueError' % input_string)
+
   def testJunk(self):
     bad_strings = ((None, 'PreTemplate: expected string or buffer'),
                    ('', 'PreTemplate: No JSON object could be decoded'),
                    ('"', 'PreTemplate: end is out of bounds'),
-                   ('"fish', 'PreTemplate: Unterminated string starting at: '
-                    'line 1 column 0 (char 0)'),
+                   ('"fish', 'PreTemplate: %s' %
+                    self.getUnterminatedStringMessage('"fish')),
                    ('fish', 'PreTemplate: No JSON object could be decoded'))
     for (bad_string, reason) in bad_strings:
       logging.info('testing: %r', bad_string)
