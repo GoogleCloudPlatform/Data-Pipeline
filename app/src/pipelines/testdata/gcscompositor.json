@@ -1,0 +1,36 @@
+{
+    "inputs": [
+        {
+            "type": "GcsInput",
+            "object": "gs://{{ storage.bucket }}/groovesalad.pls",
+            "sinks": [
+                "gs://{{ storage.bucket }}/groovesalad.pls"
+            ]
+        },
+        {
+            "type": "GcsInput",
+            "object": "gs://{{ storage.bucket }}/saladgroove.pls",
+            "sinks": [
+                "gs://{{ storage.bucket }}/saladgroove.pls"
+            ]
+        }
+    ],
+    "transforms": [
+        {
+            "type": "GcsCompositor",
+            "contentType": "audio/x-scpls"
+        }
+    ],
+    "outputs": [
+        {
+            "type": "GcsOutput",
+            "object": "gs://{{ storage.bucket }}/allgrooves.pls"
+        }
+    ],
+    "options": {
+        "storage": {
+            "bucket": "{{ storage.bucket }}",
+            "prefix": "tests/"
+        }
+    }
+}

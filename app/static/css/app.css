@@ -1,0 +1,166 @@
+
+body {
+  font-family: arial;
+  margin: 0;
+}
+
+#maia-main {
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 44px;
+}
+
+.main-page {
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.main-page .ui-layout-resizer-west {
+  border-right: 1px solid #ebebeb;
+  height: 100% !important;
+  padding: 0 15px;
+  z-index: 0 !important;
+}
+
+.main-page .ui-layout-west {
+  height: 100% !important;
+  z-index: 50 !important;
+}
+
+.feedback {
+  bottom: 5px;
+  position: absolute;
+  right: 5px;
+}
+
+.fill-content {
+  box-sizing: border-box;
+  height: 95%;
+  width: 100%;
+}
+
+.work-being-done {
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 62px;
+  z-index: 10;
+}
+
+.work-being-done-center {
+  display: inline-block;
+  margin: 0 auto;
+  text-align: center;
+  width: 100%;
+}
+
+.close {
+  float: right;
+  opacity: 0.7;
+  padding: 10px;
+  position: relative;
+  right: 0;
+  top: 0;
+  height: 11px;
+  width: 11px;
+  z-index: 30;
+}
+
+.close:after {
+  content: '';
+  background: url('/static/img/close-x.png') no-repeat;
+  height: 11px;
+  width: 11px;
+  position: absolute;
+  right: 10px;
+}
+
+.indent-right {
+  float: right;
+  margin: 0 5px 0 5px;
+}
+
+.centered-horizontal {
+  text-align: center;
+}
+
+.centered-container {
+  text-align: center;
+  height: 100%;
+  width: 100%;
+}
+
+/* The ghost, nudged to maintain perfect centering */
+.centered-container:before {
+  content: '';
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+  margin-right: 0.3em;  /* Adjusts for spacing */
+}
+
+/* The element to be centered, can also be of any width and height */
+.centered {
+  display: inline-block;
+  vertical-align: middle;
+  border: 1px solid #000;
+  background: rgba(255, 255, 255, 1.0);
+  overflow: auto;
+}
+
+.full-page {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, .4);
+  z-index: 80;
+}
+
+.app-menu {
+  background: 0 -306px url('/static/img/general_black.png') no-repeat;
+  border: none;
+  float: right;
+  height: 20px;
+  margin-top: 10px;
+  right: 0px;
+  top: 0px;
+  width: 20px;
+}
+
+.help-link {
+  float: right;
+  height: 20px;
+  margin-top: 10px;
+  margin-right: 20px;
+  right: 0px;
+  top: 0px;
+  width: 20px;
+}
+
+input.ng-invalid.ng-dirty {
+  border-color: #f00 !important;
+}
+
+.error,
+.error input,
+.error td {
+  background: #fee;
+  box-shadow:inset 0 0 10px 0 #f88;
+  -moz-box-shadow:inset 0 0 10px 0 #f88;
+  -webkit-box-shadow:inset 0 0 10px 0 #f88;
+}
+
+.pending td {
+  background: #ffe;
+}
+
+.success td {
+  background: #efe;
+}

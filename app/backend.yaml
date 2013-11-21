@@ -1,0 +1,41 @@
+application: INSERT_YOUR_APPLICATION_NAME_HERE
+version: 1
+module: backend
+runtime: python27
+api_version: 1
+threadsafe: false
+instance_class: B4_1G
+basic_scaling:
+  max_instances: 8
+  idle_timeout: 10m
+
+libraries:
+- name: pycrypto
+  version: latest
+- name: jinja2
+  version: latest
+
+handlers:
+
+- url: /_ah/start
+  script: src.server.runner
+  secure: always
+  login: admin
+
+# pipeline handlers handled from appengine_pipeline.create_handlers_map()
+- url: /_ah/pipeline(/.*)?
+  script: src.server.runner
+  secure: always
+  login: admin
+
+- url: /run/.*
+  script: src.server.runner
+  secure: always
+  login: admin
+
+- url: /.*
+  static_files: static/html/backend.html
+  upload: static/html/backend.html
+  secure: always
+  login: admin
+

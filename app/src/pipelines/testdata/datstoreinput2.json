@@ -1,0 +1,23 @@
+{
+    "inputs": [
+        {
+            "type": "DatastoreInput",
+            "gql": "SELECT * FROM Pipeline",
+            "params": {
+              "projection": ["api_key"]
+            }
+        }
+    ],
+    "outputs": [
+        {
+            "type": "GcsOutput",
+            "object": "gs://{{ storage.bucket }}/pipelines_query.csv"
+        }
+    ],
+    "options": {
+        "storage": {
+            "bucket": "{{ storage.bucket }}",
+            "prefix": "tests/"
+        }
+    }
+}

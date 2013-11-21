@@ -1,0 +1,21 @@
+{
+    "inputs": [
+        {
+            "type": "HttpInput",
+            "url": "http://code.jquery.com/jquery-2.0.3.min.js",
+            "chunkPrefix": "tests/chunks/"
+        }
+    ],
+    "outputs": [
+        {
+            "type": "GcsOutput",
+            "object": "gs://{{ storage.bucket }}/jquery-2.0.3.min.js"
+        }
+    ],
+    "options": {
+        "storage": {
+            "bucket": "{{ storage.bucket }}",
+            "prefix": "tests/"
+        }
+    }
+}

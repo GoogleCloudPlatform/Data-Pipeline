@@ -1,0 +1,15 @@
+{
+    "inputs": [
+        {
+            "type": "HttpInput",
+            "url": "http://download.thinkbroadband.com/1GB.zip",
+            "shardSize": 16777216
+        }
+    ],
+    "outputs": [
+        {
+            "type": "GcsOutput",
+            "object": "gs://{{ storage.bucket }}/1GB.zip"
+        }
+    ]
+}

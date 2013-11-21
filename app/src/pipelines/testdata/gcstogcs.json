@@ -1,0 +1,26 @@
+{
+    "inputs": [
+        {
+            "type": "GcsInput",
+            "object": "gs://{{ storage.bucket }}/groovesalad.pls",
+            "sinks": [
+                "gs://{{ storage.bucket }}/groovesalad.pls"
+            ]
+        }
+    ],
+    "outputs": [
+        {
+            "type": "GcsOutput",
+            "object": "gs://{{ storage.bucket }}/saladgroove.pls",
+            "sources": [
+                "gs://{{ storage.bucket }}/groovesalad.pls"
+            ]
+        }
+    ],
+    "options": {
+        "storage": {
+            "bucket": "{{ storage.bucket }}",
+            "prefix": "tests/"
+        }
+    }
+}

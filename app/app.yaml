@@ -1,0 +1,61 @@
+application: INSERT_YOUR_APPLICATION_NAME_HERE
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: false
+
+libraries:
+
+- name: pycrypto
+  version: "latest"
+- name: jinja2
+  version: "latest"
+
+handlers:
+
+
+- url: /favicon.ico
+  static_files: static/img/favicon.ico
+  upload: static/img/favicon.ico
+
+# TODO(user) support versioning like this - url: /_static/.+?/(.*)
+- url: /static/(.*)
+  static_files: static/\1
+  upload: static/(.*)
+  login: admin
+  secure: always
+
+# /data/ urls are handled by the server.
+- url: /data/.*
+  script: src.server.main
+  login: admin
+  secure: always
+
+# /action/ /run/ and /_ah/pipeline urls are handled by the runner.
+- url: /action/.*
+  script: src.server.runner
+  login: admin
+  secure: always
+
+- url: /run/.*
+  script: src.server.runner
+  login: optional
+  secure: always
+
+- url: /_ah/pipeline(/.*)?
+  script: src.server.runner
+  login: admin
+
+- url: /help.*
+  static_files: static/html/help/index.html
+  upload: static/html/help/index.html
+  login: admin
+  secure: always
+
+# Everything else goes to index.html and angular handles it.
+- url: /.*
+  static_files: static/html/index.html
+  upload: static/html/index.html
+  login: admin
+  secure: always
+

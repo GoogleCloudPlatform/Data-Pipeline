@@ -1,0 +1,11 @@
+queue:
+- name: backend
+  mode: push
+  bucket_size: 100
+  rate: 1/s
+  target: backend
+  max_concurrent_requests: 8
+  retry_parameters:
+    task_age_limit: 1d
+    min_backoff_seconds: 10
+    max_backoff_seconds: 600

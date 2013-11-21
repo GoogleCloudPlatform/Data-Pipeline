@@ -1,0 +1,63 @@
+{
+    "inputs": [
+      {
+        "type": "CsvMatchReplace",
+        "sources": ["gs://datapipelineark/languagecodes.csv"],
+        "fieldDelimiter": ",",
+        "columns": [
+          {
+                    "wanted": true,
+                    "type": "STRING",
+                    "name": "col_1",
+                    "transformations": [
+                        {
+                            "match": "a",
+                            "replace": "pp"
+                        }
+                    ]
+                },
+                {
+                    "wanted": true,
+                    "type": "STRING",
+                    "name": "col_2",
+                    "transformations": []
+                },
+                {
+                    "wanted": true,
+                    "type": "INTEGER",
+                    "name": "col_3",
+                    "transformations": []
+                }
+            ],
+            "skipLeadingRows": 0
+        }
+    ],
+    "outputs": [
+        {
+            "createDisposition": "CREATE_IF_NEEDED",
+            "destinationTable": {
+                "projectId": "google.com:bqwizark",
+                "tableId": "languagecodesdp",
+                "datasetId": "bqwiz_arkgooglecom"
+            },
+            "writeDisposition": "WRITE_APPEND",
+            "type": "BigQueryOutput",
+            "schema": {
+                "fields": [
+                    {
+                        "type": "STRING",
+                        "name": "col_1"
+                    },
+                    {
+                        "type": "STRING",
+                        "name": "col_2"
+                    },
+                    {
+                        "type": "INTEGER",
+                        "name": "col_3"
+                    }
+                ]
+            }
+        }
+    ]
+}

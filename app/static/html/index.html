@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html class="google" lang="en" data-ng-app="datapipeline">
+  <head>
+    <title>Data Pipeline</title>
+    <script>
+      (function(H){H.className=H.className.replace(/\bgoogle\b/,'google-js')})(document.documentElement)
+    </script>
+    <meta charset="utf-8">
+    <meta content="initial-scale=1, minimum-scale=1, width=device-width" name="viewport">
+    <script src="//www.google.com/js/google.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js">
+    </script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+    <script src="/static/js/jquery.layout-latest.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular-resource.min.js"></script>
+    <script src="/static/js/init.js"></script>
+    <script src="/static/js/services/data.js"></script>
+    <script src="/static/js/directives/download.js"></script>
+    <script src="/static/js/directives/dropupload.js"></script>
+    <script src="/static/js/directives/layout.js"></script>
+    <script src="/static/js/directives/upload.js"></script>
+    <script src="/static/js/controllers/app.js"></script>
+    <script src="/static/js/controllers/appconfig.js"></script>
+    <script src="/static/js/controllers/constants.js"></script>
+    <script src="/static/js/controllers/help.js"></script>
+    <script src="/static/js/controllers/pipeline.js"></script>
+    <script src="/static/js/controllers/pipelinelist.js"></script>
+    <script src="/static/js/main.js"></script>
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:300,400,600,700&amp;lang=en" rel="stylesheet">
+    <link rel="stylesheet" href="//www.google.com/css/maia.css">
+    <link rel="stylesheet" href="/static/css/app.css"/>
+    <link rel="stylesheet" href="/static/css/help.css"/>
+    <link rel="stylesheet" href="/static/css/pipeline.css"/>
+    <link rel="stylesheet" href="/static/css/pipelinelist.css"/>
+  </head>
+  <body ng-controller="AppCtrl">
+    <div class="maia-header" id="maia-header" role="banner">
+      <div class="maia-aux">
+        <h1>
+          <a href="../">Data Pipeline</a>
+        </h1>
+        <a class="maia-teleport" href="#content">Skip to content</a>
+        <div ng-click="showAppConfig = true;" class="app-menu"></div>
+        <div class="help-link">
+          <a target="_blank" href="/help/">Help</a>
+        </div>
+      </div>
+    </div>
+    <div id="maia-main" role="main">
+      <div class="maia-teleport" id="content">
+        <div class="maia-cols">
+          <div layout
+               embed="false"
+               layoutoptions="closable: true,
+                              resizable: true,
+                              slidable: false,
+                              west: {
+                                size: 250,
+                              },
+                              livePaneResizing: true,
+                              stateManagement__enabled: true,
+                              showDebugMessages: true"
+               class="main-page">
+            <div class="ui-layout-west"
+                 ng-include
+                 src="'/static/html/pipelinelist.ng'"
+                 ng-controller="PipelineListCtrl"></div>
+            <div class="ui-layout-center"
+                 ng-include
+                 src="'/static/html/pipeline.ng'"
+                 ng-controller="PipelineCtrl"
+                 ng-show="pipeline.id">
+              <pre>
+
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div ng-show="workBeingDone.length > 0" class="work-being-done">
+      <div class="work-being-done-center">
+        <span class="maia-notification">
+          {{ workBeingDone[0].message }}
+        </span>
+      </div>
+    </div>
+    <div ng-include
+         src="'/static/html/appconfig.ng'"
+         ng-controller="AppConfigCtrl"
+         ng-show="showAppConfig">
+    </div>
+    <script src="//www.google.com/js/maia.js"></script>
+</body>
+</html>

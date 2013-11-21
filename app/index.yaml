@@ -1,0 +1,7 @@
+indexes:
+
+- kind: ClusterInfo
+  ancestor: no
+  properties:
+  - name: prefix
+  - name: project

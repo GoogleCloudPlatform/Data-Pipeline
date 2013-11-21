@@ -1,0 +1,57 @@
+{
+  "inputs": [
+    {
+      "type": "CsvMatchReplace",
+      "fieldDelimiter": ",",
+      "sources": ["gs://{{ storage.bucket }}/languagecodes.csv"],
+      "columns": [
+        {
+          "wanted": true,
+          "type": "STRING",
+          "name": "Language",
+          "transformations": []
+        },
+        {
+          "wanted": true,
+          "type": "STRING",
+          "name": "code",
+          "transformations": []
+        },
+        {
+          "wanted": true,
+          "type": "INTEGER",
+          "name": "id",
+          "transformations": []
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "type": "BigQueryOutput",
+      "destinationTable": {
+        "projectId": "{{ app.id }}",
+        "tableId": "languagecodes",
+        "datasetId": "examples"
+      },
+      "createDisposition": "CREATE_IF_NEEDED",
+      "writeDisposition": "WRITE_APPEND",
+      "schema": {
+        "fields": [
+          {
+            "type": "STRING",
+            "name": "Language"
+          },
+          {
+            "type": "STRING",
+            "name": "code"
+          },
+          {
+            "type": "INTEGER",
+            "name": "id"
+          }
+        ]
+      }
+    }
+  ]
+}

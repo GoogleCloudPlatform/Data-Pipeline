@@ -1,0 +1,13 @@
+{
+  "inputs": [
+    {
+      "type": "HadoopSetup",
+      "project": "YOUR-GCE-PROJECT",
+      "prefix": "datapipeline",
+      "machineType": "n1-highcpu-2",
+      "zone": "us-central1-a",
+      "numWorkers": 3,
+      "sinks": null
+    }
+  ]
+}

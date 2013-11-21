@@ -1,0 +1,22 @@
+{
+    "inputs": [
+        {
+            "type": "HttpInput",
+            "url": "http://download.thinkbroadband.com/10MB.zip",
+            "chunkPrefix": "tests/chunks/"
+        }
+    ],
+    "outputs": [
+        {
+            "type": "GcsOutput",
+            "object": "gs://{{ storage.bucket }}/10MB.zip"
+        }
+    ],
+
+    "options": {
+        "storage": {
+            "bucket": "{{ storage.bucket }}",
+            "prefix": "tests/"
+        }
+    }
+}

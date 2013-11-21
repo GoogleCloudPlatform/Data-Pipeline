@@ -1,0 +1,61 @@
+{
+  "inputs": [
+    {
+      "type": "HadoopSetup",
+      "project": "YOUR-GCE-PROJECT",
+      "prefix": "datapipeline",
+      "machineType": "n1-highcpu-2",
+      "zone": "us-central1-a",
+      "numWorkers": 3,
+      "sinks": null
+    }
+  ],
+  "transforms": [
+    {
+      "type": "HadoopCsvMatchReplace",
+      "fieldDelimiter": ",",
+      "skipLeadingRows": 1,
+      "hadoopTmpDir": "gs://{{ storage.bucket }}/tmp",
+      "sources": ["gs://{{ storage.bucket }}/test_csv.csv"],
+      "sinks": ["gs://{{ storage.bucket }}/transformoutput.csv"],
+      "columns": [
+        {
+          "wanted": false,
+          "type": "INTEGER",
+          "name": "ID",
+          "transformations": []
+        },
+        {
+          "wanted": true,
+          "type": "STRING",
+          "name": "Name",
+          "transformations": []
+        },
+        {
+          "wanted": true,
+          "type": "STRING",
+          "name": "Country",
+          "transformations": [
+            {
+              "match": "Japan",
+              "replace": "JP"
+            }
+          ]
+        },
+        {
+          "wanted": true,
+          "type": "STRING",
+          "name": "Language",
+          "transformations": []
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "type": "HadoopShutdown",
+      "project": "YOUR-GCE-PROJECT",
+      "prefix": "datapipeline"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "outputs": [
+    {
+      "type": "HadoopShutdown",
+      "project": "YOUR-GCE-PROJECT",
+      "prefix": "datapipeline",
+      "sources": null
+    }
+  ]
+}

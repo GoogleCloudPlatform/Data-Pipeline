@@ -1,0 +1,64 @@
+<div class="pipeline">
+<span ng-show="isNew()">
+  <button class="maia-button"
+          title="{{ describeDisabled() }}"
+          ng-click="savePipeline()"
+          ng-disabled="describeDisabled()">Create</button>
+</span>
+<span ng-hide="isNew()">
+<button class="maia-button"
+        title="{{ describeDisabled() }}"
+        ng-click="savePipeline()"
+        ng-disabled="describeDisabled()">Save</button>
+<button class="maia-button maia-button-secondary"
+        ng-click="deletePipeline();">Delete</button>
+<button class="maia-button maia-button-secondary"
+        title="{{ describeDisabled() }}"
+        ng-click="runPipeline();"
+        ng-disabled="describeDisabled()">Run</button>
+<button download
+    file-name="{{ pipeline.name }}.json" ng-model="pipeline.config"
+    mime-type="application/json" ng-disabled="pipeline.config"
+    class="indent-right maia-button maia-button-secondary">Export</button>
+</span>
+<button class="maia-button maia-button-secondary"
+        ng-click="cancelPipelineEdit();" >Cancel</button>
+<div upload class="indent-right" ng-model="pipeline.config">
+  <button class="maia-button maia-button-secondary">Import</button>
+</div>
+<table>
+  <tr>
+    <td>Name</td>
+    <td><input ng-model="pipeline.name"></td>
+  </tr>
+  <tr ng-hide="isNew()">
+    <td>API Key</td>
+    <td>{{pipeline.api_key}}</td>
+  </tr>
+  <tr>
+    <td height="90%" colspan="2">
+      Pipe Config:<br />
+      <textarea
+         class="ng-pristine ng-valid fill-content"
+         cols="80"
+         dropupload
+         mime-types="[application/json, text/plain]"
+         ng-model="pipeline.config"
+         placeholder="Drag and drop a JSON config file here..."
+         rows="20">
+      </textarea>
+    </td>
+  </tr>
+  <tr ng-class="lintClass">
+    <td>Lint</td>
+    <td>
+      {{lintDescription}}
+      <div ng-repeat="err in lintErrors">
+        {{ err.section }} :
+        <a target="_blank" ng-href="/help/stages?stage={{ err.type }}">{{
+          err.type }}<a/> : {{ err.reason }}
+      </div>
+    </td>
+  </tr>
+</table>
+</div>

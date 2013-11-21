@@ -1,0 +1,43 @@
+{
+  "inputs": [
+    {
+      "type": "HadoopCsvMatchReplace",
+      "fieldDelimiter": ",",
+      "skipLeadingRows": 1,
+      "hadoopTmpDir": "gs://{{ storage.bucket }}/tmp",
+      "sources": ["gs://{{ storage.bucket }}/test_csv.csv"],
+      "sinks": ["gs://{{ storage.bucket }}/transformoutput.csv"],
+      "columns": [
+        {
+          "wanted": false,
+          "type": "INTEGER",
+          "name": "ID",
+          "transformations": []
+        },
+        {
+          "wanted": true,
+          "type": "STRING",
+          "name": "Name",
+          "transformations": []
+        },
+        {
+          "wanted": true,
+          "type": "STRING",
+          "name": "Country",
+          "transformations": [
+            {
+              "match": "Japan",
+              "replace": "JP"
+            }
+          ]
+        },
+        {
+          "wanted": true,
+          "type": "STRING",
+          "name": "Language",
+          "transformations": []
+        }
+      ]
+    }
+  ]
+}
