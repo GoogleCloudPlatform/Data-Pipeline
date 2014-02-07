@@ -1,0 +1,87 @@
+<div class="pipeline"
+     ng-controller="PipelineEditorCtrl as pipelineEditorCtrl">
+  <button class="maia-button"
+          title="{{pipelineEditorCtrl.describeSaveErrors()}}"
+          ng-click="pipelineEditorCtrl.savePipeline()"
+          ng-disabled="pipelineEditorCtrl.describeSaveErrors()">
+    <span ng-show="pipelineEditorCtrl.Pipelines.isNew()">
+      Create
+    </span>
+    <span ng-hide="pipelineEditorCtrl.Pipelines.isNew()">
+      Save
+    </span>
+  </button>
+  <button class="maia-button maia-button-secondary"
+          ng-hide="pipelineEditorCtrl.Pipelines.isNew()"
+          ng-click="pipelineEditorCtrl.deletePipeline();">Delete</button>
+  <button class="maia-button maia-button-secondary"
+          ng-hide="pipelineEditorCtrl.Pipelines.isNew()"
+          title="{{pipelineEditorCtrl.describeRunErrors()}}"
+          ng-click="pipelineEditorCtrl.runPipeline();"
+          ng-disabled="pipelineEditorCtrl.describeRunErrors()">Run</button>
+  <button class="maia-button maia-button-secondary"
+          ng-click="pipelineEditorCtrl.cancel();" >
+    <span ng-show="pipelineEditorCtrl.Pipelines.isNew() ||
+                   pipelineEditorCtrl.Pipelines.isChanged()">Cancel</span>
+    <span ng-hide="pipelineEditorCtrl.Pipelines.isNew() ||
+                   pipelineEditorCtrl.Pipelines.isChanged()">Close</span>
+  </button>
+  <button download
+          ng-hide="pipelineEditorCtrl.Pipelines.isNew()"
+          file-name="{{pipelineEditorCtrl.Pipelines.selected.name}}.json"
+          ng-model="pipelineEditorCtrl.Pipelines.selected.config"
+          mime-type="application/json"
+            ng-disabled="!pipelineEditorCtrl.Pipelines.selected.config"
+          class="indent-right maia-button maia-button-secondary">Export</button>
+  <div upload class="indent-right"
+       ng-model="pipelineEditorCtrl.Pipelines.selected.config">
+    <button class="maia-button maia-button-secondary">Import</button>
+  </div>
+  <table>
+    <tr>
+      <td class="first-column">Name</td>
+      <td>
+        <input ng-model="pipelineEditorCtrl.Pipelines.selected.name">
+        <div ng-hide="pipelineEditorCtrl.describeRunErrors()"
+             class="indent-right">
+          <a ng-hide="pipelineEditorCtrl.runUrlShown"
+             ng-click="pipelineEditorCtrl.showRunUrl()">Run URL</a>
+          <span ng-show="pipelineEditorCtrl.runUrlShown">
+            <input id="runUrl"
+                   readonly="true"
+                   ng-click="pipelineEditorCtrl.showRunUrl()"
+                   title="Run URL"
+                   value="{{pipelineEditorCtrl.getRunUrl()}}">
+            <span ng-click="pipelineEditorCtrl.runUrlShown = false">x</span>
+          </span>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        Pipe Config:<br />
+        <textarea
+           class="ng-pristine ng-valid fill-content pipeline-config-editor"
+           cols="80"
+           dropupload
+           mime-types="[application/json, text/plain]"
+           ng-model="pipelineEditorCtrl.Pipelines.selected.config"
+           placeholder="Drag and drop a JSON config file here..."
+           rows="10">
+        </textarea>
+      </td>
+    </tr>
+    <tr ng-class="pipelineEditorCtrl.lintClass">
+      <td>Lint</td>
+      <td>
+        {{pipelineEditorCtrl.lintDescription}}
+        <div ng-repeat="err in pipelineEditorCtrl.lintErrors">
+          <span ng-if="err.section">{{err.section}} :</span>
+          <span ng-if="err.type"><a ng-href="/help/stages?stage={{err.type}}"
+                                    target="_blank">{{err.type}}<a/> : </span>
+          {{err.reason}}
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>

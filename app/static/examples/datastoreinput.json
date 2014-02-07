@@ -8,7 +8,7 @@
     "outputs": [
         {
             "type": "GcsOutput",
-            "object": "gs://{{ storage.bucket }}/pipelines_query.csv"
+            "object": "gs://{{storage.bucket}}/pipelines_query.csv"
         }
     ]
 }

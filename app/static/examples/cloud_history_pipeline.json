@@ -1,0 +1,143 @@
+{
+  "inputs": [
+    {
+      "type": "GceInstancesInput",
+      "apiInput": {
+        "projectId": "{{ app.id }}"
+      },
+      "zones": [
+        "us-central1-a", "us-central1-b", "europe-west1-b", "europe-west1-b"
+      ],
+      "fields": "nextPageToken,items(status,kind,machineType,name,zone,tags(items,fingerprint),disks(deviceName,kind,index,boot,source,mode,type),metadata(items(value,key),kind,fingerprint),selfLink,scheduling(automaticRestart,onHostMaintenance),canIpForward,serviceAccounts(scopes,email),networkInterfaces(accessConfigs(kind,type,name,natIP),networkIP,network,name),creationTimestamp,id,statusMessage,description),kind,id,selfLink"
+    },
+    {
+      "type": "GceDisksInput",
+      "apiInput": {
+        "projectId": "{{ app.id }}"
+      },
+      "zones": [
+        "us-central1-a", "us-central1-b", "europe-west1-b", "europe-west1-b"
+      ],
+      "fields": "nextPageToken,items(status,sourceSnapshot,description,sourceSnapshotId,creationTimestamp,id,kind,name,sizeGb,zone,options,selfLink,sourceImage,sourceImageId),kind,id,selfLink"
+    }
+  ],
+  "transforms": [
+    {
+      "type": "GceDataTransformer"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "BigQueryOutput",
+      "destinationTable": {
+        "projectId": "{{ app.id }}",
+        "datasetId": "cloud_history",
+        "tableId": "Instances"
+      },
+      "sourceFormat": "NEWLINE_DELIMITED_JSON",
+      "createDisposition": "CREATE_IF_NEEDED",
+      "writeDisposition": "WRITE_APPEND",
+      "schema": {
+        "fields": [
+          { "name": "snapshotStartTime", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "snapshotEndTime", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "snapshotId", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "status", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "statusMessage", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "kind", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "machineType", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "machineTypeName", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "image", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "imageName", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "name", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "zone", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "zoneName", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "tags", "type": "RECORD", "mode": "REQUIRED", "fields":
+            [{ "name": "items", "type": "RECORD", "mode": "REPEATED", "fields":
+                [{ "name": "item", "type": "STRING", "mode": "REQUIRED" }]
+             },
+             { "name": "fingerprint", "type": "STRING", "mode": "REQUIRED" }
+            ]},
+          { "name": "disks", "type": "record", "mode": "REPEATED", "fields":
+            [{ "name": "deviceName", "type": "STRING", "mode": "NULLABLE" },
+             { "name": "kind", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "index", "type": "INTEGER", "mode": "REQUIRED" },
+             { "name": "boot", "type": "BOOLEAN", "mode": "NULLABLE" },
+             { "name": "source", "type": "STRING", "mode": "NULLABLE" },
+             { "name": "sourceName", "type": "STRING", "mode": "NULLABLE" },
+             { "name": "mode", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "type", "type": "STRING", "mode": "REQUIRED" }
+            ]},
+          { "name": "canIpForward", "type": "BOOLEAN", "mode": "REQUIRED" },
+          { "name": "serviceAccounts", "type": "RECORD", "mode": "REPEATED", "fields":
+            [{ "name": "scopes", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "email", "type": "STRING", "mode": "REQUIRED" }
+            ]},
+          { "name": "metadata", "type": "RECORD", "mode": "REQUIRED", "fields":
+            [{ "name": "kind", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "fingerprint", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "items", "type": "RECORD", "mode": "REPEATED", "fields":
+               [{ "name": "key", "type": "STRING", "mode": "REQUIRED" },
+                { "name": "value", "type": "STRING", "mode": "REQUIRED" }
+               ]}
+            ]},
+          { "name": "scheduling", "type": "RECORD", "mode": "NULLABLE", "fields":
+            [{ "name": "automaticRestart", "type": "BOOLEAN", "mode": "NULLABLE" },
+             { "name": "onHostMaintenance", "type": "STRING", "mode": "NULLABLE" }
+            ]},
+          { "name": "networkInterfaces", "type": "RECORD", "mode": "REPEATED", "fields":
+            [{ "name": "network", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "networkName", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "accessConfigs", "type": "RECORD", "mode": "REPEATED", "fields":
+               [{ "name": "kind", "type": "STRING", "mode": "REQUIRED" },
+                { "name": "type", "type": "STRING", "mode": "REQUIRED" },
+                { "name": "name", "type": "STRING", "mode": "REQUIRED" },
+                { "name": "natIP", "type": "STRING", "mode": "REQUIRED" }
+               ]},
+             { "name": "networkIP", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "name", "type": "STRING", "mode": "REQUIRED" }
+            ]},
+          { "name": "creationTimestamp", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "id", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "selfLink", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "description", "type": "STRING", "mode": "NULLABLE" }
+        ]
+      }
+    },
+    {
+      "type": "BigQueryOutput",
+      "destinationTable": {
+        "projectId": "{{ app.id }}",
+        "datasetId": "cloud_history",
+        "tableId": "Disks"
+      },
+      "sourceFormat": "NEWLINE_DELIMITED_JSON",
+      "createDisposition": "CREATE_IF_NEEDED",
+      "writeDisposition": "WRITE_APPEND",
+      "schema": {
+        "fields": [
+          { "name": "snapshotStartTime", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "snapshotEndTime", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "snapshotId", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "kind", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "id", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "creationTimestamp", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "zone", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "zoneName", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "status", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "name", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "description", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "sizeGb", "type": "INTEGER", "mode": "NULLABLE" },
+          { "name": "sourceSnapshot", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "sourceSnapshotName", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "sourceSnapshotId", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "sourceImage", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "sourceImageName", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "sourceImageId", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "options", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "selfLink", "type": "STRING", "mode": "REQUIRED" }
+        ]
+      }
+    }
+  ]
+}

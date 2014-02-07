@@ -9,7 +9,7 @@
     "outputs": [
         {
             "type": "GcsOutput",
-            "object": "gs://{{ storage.bucket }}/1GB.zip"
+            "object": "gs://{{storage.bucket}}/1GB.zip"
         }
     ]
 }

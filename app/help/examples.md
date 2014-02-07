@@ -82,7 +82,7 @@ nothing to it (since we're keeping all the columns). The `BigQueryOutput` stage
 is going to add some data into a table in BigQuery, using a schema that looks
 exactly the columnar output from the previous stage. But hang on, how does this
 stage know what data to write into the table? One can see that neither does our
-input stage provide `sinks` not does out output stage provide `sources`. The
+input stage provide `sinks` nor does our output stage provide `sources`. The
 application will automatically generate a temporary object in GCS and inject the
 missing parameters into each stage's configuration. When the `CsvMatchReplace`
 stage is run, it will have the URL of this temporary GCS object as a sink, and

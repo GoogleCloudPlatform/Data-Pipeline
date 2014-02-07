@@ -29,7 +29,7 @@
     ],
     "options": {
         "storage": {
-            "bucket": "{{ storage.bucket }}",
+            "bucket": "gs://example",
             "prefix": "tests/"
         }
     }

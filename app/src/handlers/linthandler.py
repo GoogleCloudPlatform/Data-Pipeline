@@ -34,4 +34,5 @@ class LintHandler(basehandler.RequestHandler):
       lint = linter.PipelineLinter(
           p['config'],
           appconfig.AppConfig.GetAppConfig().AsOptionsDict())
-      self.SendJson(lint.results.results)
+      p['lint'] = lint.results.results
+      self.SendJson(p)

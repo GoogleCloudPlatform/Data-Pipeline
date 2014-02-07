@@ -3,7 +3,7 @@
     {
       "type": "CsvMatchReplace",
       "fieldDelimiter": ",",
-      "sources": ["gs://{{ storage.bucket }}/languagecodes.csv"],
+      "sources": ["gs://{{storage.bucket}}/languagecodes.csv"],
       "columns": [
         {
           "wanted": true,
@@ -30,7 +30,7 @@
     {
       "type": "BigQueryOutput",
       "destinationTable": {
-        "projectId": "{{ app.id }}",
+        "projectId": "{{app.id}}",
         "tableId": "languagecodes",
         "datasetId": "examples"
       },

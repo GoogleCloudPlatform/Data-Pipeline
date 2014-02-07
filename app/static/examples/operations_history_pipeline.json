@@ -1,0 +1,82 @@
+{
+  "inputs": [
+    {
+      "type": "GceZoneOperationsInput",
+      "destinationTable": {
+            "projectId": "{{ app.id }}",
+            "tableId": "zoneoperations",
+            "datasetId": "cloud_history"
+          },
+      "zones": [
+        "us-central1-a",
+        "us-central1-b",
+        "europe-west1-b",
+        "europe-west1-b"
+      ],
+      "fields": "nextPageToken,items(targetId,clientOperationId,creationTimestamp,id,zone,insertTime,httpErrorMessage,progress,httpErrorStatusCode,statusMessage,status,operationType,warnings(message,code,data(value,key)),targetLink,startTime,kind,name,region,error(errors(message,code,location)),endTime,selfLink,user),kind,id,selfLink"
+    }
+  ],
+  "transforms": [
+    {
+      "type": "GceDataTransformer"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "BigQueryOutput",
+      "destinationTable": {
+        "projectId": "{{ app.id }}",
+        "datasetId": "cloud_history",
+        "tableId": "zoneoperations"
+      },
+      "sourceFormat": "NEWLINE_DELIMITED_JSON",
+      "createDisposition": "CREATE_IF_NEEDED",
+      "writeDisposition": "WRITE_APPEND",
+      "schema": {
+        "fields": [
+          { "name": "snapshotStartTime", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "snapshotEndTime", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "snapshotId", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "resourceType", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "operationType", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "kind", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "id", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "creationTimestamp", "type": "TIMESTAMP", "mode": "NULLABLE" },
+          { "name": "name", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "zone", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "zoneName", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "clientOperationId", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "targetLink", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "targetLinkName", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "targetId", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "status", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "statusMessage", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "user", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "progress", "type": "INTEGER", "mode": "REQUIRED" },
+          { "name": "insertTime", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "startTime", "type": "TIMESTAMP", "mode": "REQUIRED" },
+          { "name": "endTime", "type": "TIMESTAMP", "mode": "NULLABLE" },
+          { "name": "error", "type": "RECORD", "mode": "NULLABLE", "fields":
+            [{ "name": "errors", "type": "RECORD", "mode": "REPEATED", "fields":
+               [{ "name": "code", "type": "STRING", "mode": "REQUIRED" },
+                { "name": "location", "type": "STRING", "mode": "NULLABLE" },
+                { "name": "message", "type": "STRING", "mode": "NULLABLE" }
+               ]
+             }]},
+          { "name": "warnings", "type": "RECORD", "mode": "REPEATED", "fields":
+            [{ "name": "code", "type": "STRING", "mode": "REQUIRED" },
+             { "name": "message", "type": "STRING", "mode": "NULLABLE" },
+             { "name": "data", "type": "RECORD", "mode": "REPEATED", "fields":
+               [{ "name": "key", "type": "STRING", "mode": "REQUIRED" },
+                { "name": "value", "type": "STRING", "mode": "REQUIRED" }
+               ]}
+            ]},
+          { "name": "httpErrorStatusCode", "type": "INTEGER", "mode": "NULLABLE" },
+          { "name": "httpErrorMessage", "type": "STRING", "mode": "NULLABLE" },
+          { "name": "selfLink", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "region", "type": "STRING", "mode": "NULLABLE" }
+        ]
+      }
+    }
+  ]
+}

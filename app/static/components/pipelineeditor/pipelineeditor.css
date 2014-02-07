@@ -1,0 +1,16 @@
+.first-column {
+  width: 6em;
+}
+
+.pipeline {
+  padding: 5px 20px;
+  height: 100%;
+}
+
+.pipeline table {
+  width: 100%;
+}
+
+.pipeline-config-editor {
+  font-family: "Lucida Console", Monaco, monospace, "Courier New", Courier;
+}

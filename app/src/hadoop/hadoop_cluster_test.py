@@ -44,8 +44,8 @@ class HadoopClusterTest(basetest.TestCase):
     parent_mock = mock.MagicMock()
     parent_mock.attach_mock(mock_gce_api_class, 'GceApi')
     parent_mock.attach_mock(
-        mock_gce_api_class.return_value.CreateInstance,
-        'CreateInstance')
+        mock_gce_api_class.return_value.CreateInstanceWithNewPersistentBootDisk,
+        'CreateInstanceWithNewPersistentBootDisk')
     parent_mock.attach_mock(
         mock_gce_api_class.return_value.ListInstances,
         'ListInstances')
@@ -55,6 +55,15 @@ class HadoopClusterTest(basetest.TestCase):
     parent_mock.attach_mock(
         mock_gce_api_class.return_value.DeleteInstance,
         'DeleteInstance')
+    parent_mock.attach_mock(
+        mock_gce_api_class.return_value.ListDisks,
+        'ListDisks')
+    parent_mock.attach_mock(
+        mock_gce_api_class.return_value.GetDisk,
+        'GetDisk')
+    parent_mock.attach_mock(
+        mock_gce_api_class.return_value.DeleteDisk,
+        'DeleteDisk')
 
     parent_mock.attach_mock(mock.patch('time.sleep').start(), 'sleep')
 
@@ -101,33 +110,37 @@ class HadoopClusterTest(basetest.TestCase):
     self.assertEqual('GceApi', call[0])
     # Create master instance.
     call = method_calls.next()
-    self.assertEqual('CreateInstance', call[0])
+    self.assertEqual('CreateInstanceWithNewPersistentBootDisk', call[0])
     self.assertEqual('managed-hadoop-master', call[1][0])
     # Create worker instance #000.
     call = method_calls.next()
-    self.assertEqual('CreateInstance', call[0])
+    self.assertEqual('CreateInstanceWithNewPersistentBootDisk', call[0])
     self.assertEqual('managed-hadoop-worker-000', call[1][0])
     # Create worker instance #001.
     call = method_calls.next()
-    self.assertEqual('CreateInstance', call[0])
+    self.assertEqual('CreateInstanceWithNewPersistentBootDisk', call[0])
     self.assertEqual('managed-hadoop-worker-001', call[1][0])
 
   def testTeardownCluster(self):
     """Unit test of TeardownCluster()."""
     parent_mock = self._SetUpMocksForClusterStart()
 
-    loop_count = [0]
-    def DummyListInstance(unused_instance_name):
-      loop_count[0] += 1
-      if loop_count[0] == 1:
-        return [
+    # Create a sequence of return values for mock method calls.
+    # The dummy list with two values: the first value is a list of resources and
+    # the second value is an empty list, which indicates that the list of
+    # resources have been deleted in this unit test.
+    dummy_list = [
+        [
             {'name': 'fugafuga'},
             {'name': 'hogehoge'},
-            {'name': 'piyopiyo'}]
-      return []
-
-    parent_mock.ListInstances.side_effect = DummyListInstance
+            {'name': 'piyopiyo'}
+        ],
+        []
+    ]
+    parent_mock.ListInstances.side_effect = dummy_list
     parent_mock.GetInstance.return_value = None
+    parent_mock.ListDisks.side_effect = dummy_list
+    parent_mock.GetDisk.return_value = None
 
     cluster_info = datastore.ClusterInfo(
         prefix='managed', project='project-hoge', zone='zone-fuga')
@@ -145,6 +158,14 @@ class HadoopClusterTest(basetest.TestCase):
         [mock.call('fugafuga'), mock.call('hogehoge'),
          mock.call('piyopiyo')],
         parent_mock.DeleteInstance.call_args_list)
+
+    parent_mock.ListDisks.assert_called_with(
+        'name eq "managed-hadoop-master|^managed-hadoop-worker-\\d+$"')
+    # Make sure DeleteDisk() is called for each disk.
+    self.assertEqual(
+        [mock.call('fugafuga'), mock.call('hogehoge'),
+         mock.call('piyopiyo')],
+        parent_mock.DeleteDisk.call_args_list)
 
   def testTeardownCluster_NoInstance(self):
     """Unit test of TeardownCluster() with no instance returned by list."""

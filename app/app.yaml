@@ -47,15 +47,15 @@ handlers:
   login: admin
 
 - url: /help.*
-  static_files: static/html/help/index.html
-  upload: static/html/help/index.html
+  static_files: static/components/help/index.html
+  upload: static/components/help/index.html
   login: admin
   secure: always
 
 # Everything else goes to index.html and angular handles it.
 - url: /.*
-  static_files: static/html/index.html
-  upload: static/html/index.html
+  static_files: static/index.html
+  upload: static/index.html
   login: admin
   secure: always
 

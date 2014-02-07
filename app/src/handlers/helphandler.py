@@ -30,7 +30,8 @@ class HelpHandler(basehandler.RequestHandler):
     # strip off the /data/help/ part of the path
     section = self.request.path.split('/', 3)[-1]
 
-    if section in ['install', 'overview', 'usage', 'examples']:
+    if section in ['install', 'overview', 'usage', 'examples', 'cloudhistory',
+                   'changelog']:
       self.SendSection(section)
     elif section.startswith('stage'):
       self.SendJson([{

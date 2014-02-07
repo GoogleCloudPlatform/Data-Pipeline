@@ -16,9 +16,12 @@
 
 import contextlib
 import fnmatch
+import logging
 import math
 import urlparse
 import uuid
+
+from apiclient.errors import HttpError
 
 import cloudstorage
 from src import auth
@@ -35,7 +38,8 @@ class Gcs(object):
   SERVICE_NAME = 'storage'
   SERVICE_VERSION = 'v1beta2'
   AUTH_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_write'
-  MAX_COMPOSABLE_OBJECTS = 32
+  MAX_COMPOSABLE_OBJECTS = 32  # max objects we can compose in one call
+  MAX_TOTAL_COMPOSABLE_OBJECTS = 1024  # total composed count limit
   CHUNK_SIZE_8MB = 1 << 23
   READ_CHUNK_SIZE = CHUNK_SIZE_8MB
   DEFAULT_CONTENT_TYPE = 'binary/octet-stream'
@@ -261,9 +265,17 @@ class Gcs(object):
         else:
           return
 
-  def DeleteObject(self, bucket, obj):
+  def DeleteObject(self, bucket, obj, ignore_missing_files=True):
     """Removes an existing GCS object."""
-    self._AcquireService().objects().delete(bucket=bucket, object=obj).execute()
+    try:
+      self._AcquireService().objects().delete(bucket=bucket,
+                                              object=obj).execute()
+    except HttpError as err:
+      if err.resp.status == 404 and ignore_missing_files:
+        logging.info('ignoring missing file (404) error deleting gs://%s/%s %r',
+                     bucket, obj, err)
+      else:
+        raise err
 
   def ComposeObjects(self, bucket, src_objects, dest_obj, content_type):
     """Composes multiple objects into a one.
@@ -279,28 +291,98 @@ class Gcs(object):
     Returns:
       The destination object resource.
     """
-    l = len(src_objects)
-    if l < 1:
+    src_objects_len = len(src_objects)
+    if src_objects_len < 1:
       return {}
-    elif l <= self.MAX_COMPOSABLE_OBJECTS:
+    elif src_objects_len <= self.MAX_COMPOSABLE_OBJECTS:
       body = {'sourceObjects': [{'name': s} for s in src_objects],
               'destination': {'contentType': content_type}}
+      logging.info('calling gcs composit with %d objects', len(src_objects))
       req = self._AcquireService().objects().compose(destinationBucket=bucket,
                                                      destinationObject=dest_obj,
                                                      body=body)
       return req.execute()
-    else:
-      n = int(math.ceil(float(l) / self.MAX_COMPOSABLE_OBJECTS))
+    elif src_objects_len <= self.MAX_TOTAL_COMPOSABLE_OBJECTS:
+      # A composed object can store all these src_objects
       tmp = []
-      for i in range(n):
+      for chunk in SplitEvenly(src_objects, self.MAX_COMPOSABLE_OBJECTS):
         tmp.append(self.UrlToBucketAndName(self.UrlCreator(bucket)())[1])
-        self.ComposeObjects(bucket,
-                            src_objects[i * self.MAX_COMPOSABLE_OBJECTS:
-                                        (i + 1) * self.MAX_COMPOSABLE_OBJECTS],
-                            tmp[i],
-                            content_type)
+        self.ComposeObjects(bucket, chunk, tmp[-1], content_type)
       r = self.ComposeObjects(bucket, tmp, dest_obj, content_type)
       # Clean up temporary objects
       for t in tmp:
         self.DeleteObject(bucket, t)
       return r
+    else:
+      # A composed object will have too many parts to make this in one compose.
+      # So we make a few objects, then copy them to reset the component count.
+      tmp = []
+      for chunk in SplitEvenly(src_objects, self.MAX_TOTAL_COMPOSABLE_OBJECTS):
+        tmp.append(self.UrlToBucketAndName(self.UrlCreator(bucket)())[1])
+        self.ComposeObjects(bucket, chunk, tmp[-1], content_type)
+      # now compress those temp files to reset the composed object count
+      for dest_obj in tmp:
+        self.CompressObject(self.MakeUrl(*dest_obj))
+      r = self.ComposeObjects(bucket, tmp, dest_obj, content_type)
+      # Clean up temporary objects
+      for t in tmp:
+        self.DeleteObject(bucket, t)
+      return r
+
+  def CompressObject(self, src):
+    """Compresses an object to reset the composite-ness of it.
+
+    Warning: this is expensive and slow since right now the only way
+    to do this is to download and reupload the file.
+
+    Args:
+      src: must specify both the bucket and object (e.g. gs://bucketA/obj1).
+    Raises:
+      ValueError: if src not provided or are malformed.
+
+    """
+    if not src:
+      raise ValueError('No source specified.')
+
+    (src_bucket, src_object) = self.UrlToBucketAndName(src)
+    tmp = self.UrlCreator(bucket=src_bucket)
+
+    logging.info('Compressing %s to %s', src, tmp)
+
+    # copy the file contents.
+    src_path = Gcs.UrlToBucketAndNamePath(src)
+    tmp_path = Gcs.UrlToBucketAndNamePath(src)
+
+    count = 0
+    with cloudstorage.open(src_path) as src_obj:
+      with cloudstorage.open(tmp_path, 'w') as tmp_obj:
+        while True:
+          count += 1
+          if count % 128 == 0:
+            logging.info('still compressing... done %d 8M chunks', count)
+          buf = src_obj.read(self.READ_CHUNK_SIZE)
+          if buf and len(buf):
+            tmp_obj.write(buf)
+          else:
+            break
+
+    # remove the src
+    logging.info('Compressing replacing %s with %s', src, tmp)
+    self.DeleteObject(src_bucket, src_object)
+    self.CopyObject(tmp, src)
+    logging.info('Compressing %s DONE', src)
+
+
+def SplitEvenly(arr, max_size):
+  """Split an array into even chunks that are no larger than max_size."""
+  arr_len = len(arr)
+  if arr_len < 1:
+    return
+  split_size = int(math.ceil(float(arr_len) /
+                             (math.ceil(float(arr_len) / max_size))))
+  logging.info('split size is %d for len %d max_size %d',
+               split_size, arr_len, max_size)
+  idx = 0
+  while idx < arr_len:
+    yield arr[idx:idx + split_size]
+    idx += split_size

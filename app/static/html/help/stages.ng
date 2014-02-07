@@ -1,8 +1,0 @@
-<div class="help-search">
- Search: <input type="search" ng-model="$parent.helpSearch">
-</div>
-<div ng-repeat="stageHelp in stageHelps | filter:helpSearch | orderBy:'name'">
-  <h1>{{ stageHelp.name }}</h1>
-<div ng-bind-html-unsafe="stageHelp.help">
-</div>
-</div>

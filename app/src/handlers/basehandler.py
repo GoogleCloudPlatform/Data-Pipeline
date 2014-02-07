@@ -30,7 +30,7 @@ class RequestHandler(webapp2.RequestHandler):
   """Base Handler class with useful utility methods."""
 
   def Respond(self, msg, status=200, *args):
-    logging.info(msg, args)
+    logging.info(msg, *args)
     self.response.write(msg % args)
     self.response.status = status
 

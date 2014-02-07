@@ -1,0 +1,51 @@
+
+.pipeline-list {
+  margin-top: 25px;
+}
+
+.pipeline-list-items {
+  bottom: 0;
+  left: 0;
+  overflow: auto;
+  position: absolute;
+  right: 0;
+  top: 80px
+}
+
+.pipeline-list-item {
+  border-bottom: 1px solid #eee;
+  padding: 8px;
+}
+
+.pipeline-list-item.selected {
+  background-color: #eef;
+}
+
+.pipeline-list-item:hover {
+  background-color: #eee;
+  cursor: pointer;
+}
+
+.pipeline-list-item:hover .pipeline-controls {
+  display: block;
+}
+
+.pipeline-list-item .pipeline-controls {
+  display: none;
+}
+
+.pipeline-list-item .pipeline-name {
+  background: 4px 1px url('/static/img/pipeline.png') no-repeat;
+  overflow: hidden;
+  padding-left: 5px;
+  text-indent: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pipeline-controls {
+  display: inline-block;
+  float: right;
+  padding: 5px 6px;
+  white-space: nowrap;
+}

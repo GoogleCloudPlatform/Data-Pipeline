@@ -1,0 +1,9 @@
+<div ng-show="butterBarCtrl.ButterBar.workBeingDone.length > 0"
+     ng-controller="ButterBarCtrl as butterBarCtrl"
+     class="work-being-done">
+  <div class="work-being-done-center">
+    <span class="maia-notification">
+      {{butterBarCtrl.ButterBar.workBeingDone[0].message}}
+    </span>
+  </div>
+</div>

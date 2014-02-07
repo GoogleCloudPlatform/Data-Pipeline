@@ -109,6 +109,13 @@ configurations. Simply enclose them in double braces like this:
 These variables are added in the `GetTemplateVariables` method
 in `src/pipelines/linter.py` file.
 
+You can also create your own variables in your pipeline config. These
+can be useful for choosing regions or specifying output files. Use the
+regular double brace syntax and make up new variable names. The UI
+will recognize this and provide an area for you to enter variable
+values which will be passed as CGI parameters to the run url.
+
+
 ### Running the pipeline
 
 You can run a data pipeline by clicking the `Run` button after selecting it in
@@ -116,12 +123,12 @@ the UI. Recall that `Run` in only available if the configuration is valid and
 passes a lint check. If the `Run` or `Save` buttons are disabled, check the
 bottom of the page for lint errors.
 
-You can also copy the `Run URL` and hit that to start your data pipeline. The
-`Run URL` contains a random `api_key` (automatically generated on first save)
-and does not require any authentication to access. Once the pipeline is started,
-a new pop-up window will open and show its progress. **IMPORTANT**: be sure to
-allow your browser to open pop-ups. You might want to hit the `Run URL` from a
-`cron.yaml` entry, regular `cron` job using `wget` or `curl` or a
+You can also copy the `Run URL` and use that to start your data
+pipeline. The `Run URL` contains a random `api_key` (automatically
+generated on first save) and does not require any authentication to
+access. Once the pipeline is started, a new tab will open and show its
+progress. You might want to hit the `Run URL` from a `cron.yaml`
+entry, regular `cron` job using `wget` or `curl` or a
 [Google Cloud Storage Object Change Notification].
 
 Data Pipeline makes use of [Google App Engine Modules]

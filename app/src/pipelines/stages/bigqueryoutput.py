@@ -38,6 +38,7 @@ The stage config should look like this:
     "tableId": "...",
     "datasetId": "..."
   },
+  "sourceFormat": "CSV",
   "schema": {
     "fields": [{"type": "STRING", "name": "col_1"},
                ...
@@ -71,7 +72,8 @@ Syntax](https://developers.google.com/bigquery/docs/reference/v2/jobs).
     bq.CreateTable(config['destinationTable']['datasetId'],
                    config['destinationTable']['tableId'],
                    config['schema']['fields'],
-                   config['sources'][0])
+                   config['sources'][0],
+                   source_format=config.get('sourceFormat'))
 
   def Lint(self, linter):
     """Stage-specific configuration linting."""

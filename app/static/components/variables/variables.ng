@@ -1,0 +1,16 @@
+<div class="variables-list"
+     ng-controller="VariablesCtrl as variablesCtrl">
+  <h2>Pipeline Variables</h2>
+  <div ng-show="variablesCtrl.Pipelines.selected.variables"
+       class="variables-list-items">
+    <table>
+      <tr class="variables-list-item"
+          ng-repeat="v in variablesCtrl.Pipelines.selected.variables |
+                     orderBy:'name'">
+        <td><div title="{{v.name}}"
+                 class="variables-name">{{v.name}}</div></td>
+        <td><input ng-model="v.value"></td>
+    </table>
+  </div>
+  <div ng-hide="variablesCtrl.Pipelines.selected.variables">No variables found in config.</div>
+</div>

@@ -59,13 +59,6 @@ class HadoopCluster(object):
   GENERATED_FILES_DIR = 'generated_files'
   MASTER_NAME = 'hadoop-master'
   WORKER_NAME_CORE = 'hadoop-worker'
-
-  # Suffix of persistent disk name appended to the instance name.
-  PERSISTENT_DISK_SUFFIX = '-pd'
-  # TODO(user): Optimize the size.  100GB persistent disk may be too much
-  #     for HDFS metadata, and it costs $10/month.
-  # TODO(user): Move to AppConfig when we support persistent disk.
-  PERSISTENT_DISK_SIZE_GB = 100
   DONE_FILE = '/var/log/STARTUP_SCRIPT_DONE'
 
   INSTANCE_ROLES = {
@@ -104,11 +97,6 @@ class HadoopCluster(object):
       else:
         setattr(self, item, locals().get(item, None))
 
-    # Machine type with scratch disk.
-    self.machinetype_scratch_disk = '%s-d' % self.machinetype
-    # Machine type with persistent disk.
-    self.machinetype_persistent_disk = self.machinetype
-
     self.master_name = self.prefix + '-' + self.MASTER_NAME
     self.worker_name_template = '%s-%s-%%03d' % (
         self.prefix, self.WORKER_NAME_CORE)
@@ -126,61 +114,15 @@ class HadoopCluster(object):
   def _GetTmpCloudStorage(self):
     return '%s/hadoop' % appconfig.AppConfig.GetAppConfig().cloud_storage_bucket
 
-  def _MaybeCreatePersistentDisk(self, disk_name):
-    """Create a new persistent disk if the disk doesn't exist.
-
-    The method first checks the existence of the disk.  If the disk with the
-    same name already exists, the method does nothing further.
-
-    Args:
-      disk_name: Name of the new persistent disk.
-    Raises:
-      ClusterSetUpError: upon error on persistent disk creation.
-    """
-    # Check if persistent disk already exists.
-    disk_info = self._GetApi().GetDisk(disk_name)
-    # If the persistent disk doesn't exist, create one now.
-    if not disk_info:
-      logging.info('Create persistent disk %s', disk_name)
-      if not self._GetApi().CreatePersistentDisk(
-          disk_name, self.PERSISTENT_DISK_SIZE_GB, wait=True):
-        raise ClusterSetUpError('Failed to create persistent disk %s' %
-                                disk_name)
-    else:
-      logging.info('Use existing persistent disk %s for NameNode.',
-                   disk_name)
-
-  def _StartInstance(self, instance_name, role, persistent_disk=False):
-    """Starts single Compute Engine instance.
-
-    If persistent disk is specified, the new instance has that persistent disk
-    attached.  In this case, the instance does not have additional scratch disk.
-    If persistent disk is not specified, the new instance has an additional
-    scratch disk.
-
-    If the persistent disk does not exist, this method creates one.
+  def _StartInstance(self, instance_name, role):
+    """Starts single Compute Engine instance with a new persistent boot disk.
 
     Args:
       instance_name: Name of the new instance.
       role: Instance role name.  Must be one of the keys of INSTANCE_ROLES.
-      persistent_disk: Boolean to indicate whether to attach persistent disk.
-          If persistent_disk is True, persistent disk with name
-          "instance_name-pd" is attached.
-          e.g. hadoop-hm-0-pd for instance hadoop-hm-0
     Raises:
       ClusterSetUpError: if the method fails to start an instance.
     """
-    persistent_disk_name = None
-    if persistent_disk:
-      persistent_disk_name = instance_name + self.PERSISTENT_DISK_SUFFIX
-      self._MaybeCreatePersistentDisk(persistent_disk_name)
-
-      # With persistent disk, use machine type without scratch disk.
-      machinetype = self.machinetype_persistent_disk
-      disk_id = persistent_disk_name
-    else:
-      machinetype = self.machinetype_scratch_disk
-      disk_id = 'ephemeral-disk-0'
 
     logging.info('Starting instance: %s', instance_name)
 
@@ -190,7 +132,6 @@ class HadoopCluster(object):
         'startup-script-url': '%s/%s' % (
             self._GetTmpCloudStorage(), self.COMPUTE_STARTUP_SCRIPT),
         'rpckey': rpckey,
-        'disk-id': 'google-%s' % disk_id,
         'hostname-prefix': self.prefix,
         'num-workers': self.num_workers,
         'hadoop-master': self.master_name,
@@ -206,12 +147,11 @@ class HadoopCluster(object):
       metadata[command] = 1
 
     logging.info('Create instance: %s', instance_name)
-    if not self._GetApi().CreateInstance(
+    if not self._GetApi().CreateInstanceWithNewPersistentBootDisk(
         instance_name,
         self.network,
-        machinetype,
+        self.machinetype,
         self.image,
-        persistent_disk=persistent_disk_name,
         # startup_script=self.startup_script,
         service_accounts=[
             'https://www.googleapis.com/auth/devstorage.full_control'],
@@ -340,29 +280,50 @@ class HadoopCluster(object):
       self.cluster_info.SetStatus('%s: %s' % (
           datastore.ClusterStatus.ERROR, str(e)))
 
-  def TeardownCluster(self):
-    """Deletes Compute Engine instances with likely names."""
-    self.cluster_info.SetStatus(datastore.ClusterStatus.TEARING_DOWN)
+  def _DeleteResource(
+      self, filter_string, list_method, delete_method, get_method):
+    """Deletes Compute Engine resource that matches the filter.
 
+    Args:
+      filter_string: Filter string of the resource.
+      list_method: Method to list the resources.
+      delete_method: Method to delete the single resource.
+      get_method: Method to get the status of the single resource.
+    """
     while True:
-      instances = self._GetApi().ListInstances('name eq "%s|%s"' % (
-          self.master_name, self.worker_name_pattern))
-      instance_names = [i['name'] for i in instances]
-      if not instance_names:
+      list_of_resources = list_method(filter_string)
+      resource_names = [i['name'] for i in list_of_resources]
+      if not resource_names:
         break
-      for name in instance_names:
-        logging.info('Shutting down %s', name)
-        self._GetApi().DeleteInstance(name)
+      for name in resource_names:
+        logging.info('  %s', name)
+        delete_method(name)
 
       for _ in xrange(self.CLUSTER_SHUTDOWN_MAX_CHECK_TIMES):
         still_alive = []
-        for name in instance_names:
-          instance = self._GetApi().GetInstance(name)
-          if instance is not None:
+        for name in resource_names:
+          if get_method(name):
             still_alive.append(name)
+          else:
+            logging.info('Deletion complete: %s', name)
         if not still_alive:
           break
-        instance_names = still_alive
+        resource_names = still_alive
         time.sleep(self.CLUSTER_SHUTDOWN_CHECK_INTERVAL)
+
+  def TeardownCluster(self):
+    """Deletes Compute Engine instances with likely names."""
+    self.cluster_info.SetStatus(datastore.ClusterStatus.TEARING_DOWN)
+    name_filter = 'name eq "%s|%s"'% (
+        self.master_name, self.worker_name_pattern)
+    logging.info('Delete instances:')
+    self._DeleteResource(
+        name_filter, self._GetApi().ListInstances,
+        self._GetApi().DeleteInstance, self._GetApi().GetInstance)
+
+    logging.info('Delete disks:')
+    self._DeleteResource(
+        name_filter, self._GetApi().ListDisks,
+        self._GetApi().DeleteDisk, self._GetApi().GetDisk)
 
     self.cluster_info.key.delete()

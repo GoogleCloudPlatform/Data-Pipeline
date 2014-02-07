@@ -14,6 +14,7 @@
 
 """Datastore object containing information about a pipeline."""
 
+import json
 import uuid
 
 
@@ -28,9 +29,12 @@ class Pipeline(crud_model.CrudNdbModel):
   """A Pipeline to load data."""
   parent_model_name = 'User'
 
+  # If you add more fields here that the user might edit then make sure you
+  # add them to pipelineValueKeys in static/components/pipelines/pipelines.js
   name = ndb.StringProperty()
   api_key = ndb.StringProperty()
   config = ndb.TextProperty()
+  variables = ndb.TextProperty(default='{}')  # JSON string of key/value dict
   created = ndb.DateTimeProperty(auto_now_add=True)
   last_updated = ndb.DateTimeProperty(auto_now=True)
   running_pipeline_ids = ndb.StringProperty(repeated=True)
@@ -55,3 +59,8 @@ class Pipeline(crud_model.CrudNdbModel):
     # If we don't have an api_key then create one.
     if not self.api_key:
       self.api_key = str(uuid.uuid4())
+    json_dict['variables'] = json.dumps(json_dict.get('variables', {}))
+
+  def AddToJsonDict(self, json_dict):
+    """Called before a json dict is sent to the client."""
+    json_dict['variables'] = json.loads(json_dict.get('variables', '{}'))

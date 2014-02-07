@@ -14,6 +14,7 @@
 
 """Unit tests of gce_api.py."""
 
+
 import apiclient
 import gce_api
 import mock
@@ -111,27 +112,106 @@ class GceApiTest(basetest.TestCase):
     mock_instances_list.return_value.execute.assert_called_once_with()
     self.assertEqual(['dummy', 'list'], instance_list)
 
-  def testCreateInstance_Success(self):
-    """Unit test of CreateInstance() with success result."""
+  def testListDisks_NoFilter(self):
+    """Unit test of ListDisks() without filter string."""
     mock_api = self.mock_api_build.return_value
-    mock_instance_insert = mock_api.instances.return_value.insert
+    mock_disk_list = mock_api.disks.return_value.list
 
+    mock_disk_list.return_value.execute.return_value = {
+        'items': ['dummy', 'list']
+    }
+
+    disk_list = self.gce_api.ListDisks()
+
+    mock_disk_list.assert_called_once_with(
+        project='project-name', zone='zone-name', filter=None)
+    mock_disk_list.return_value.execute.assert_called_once_with()
+    self.assertEqual(['dummy', 'list'], disk_list)
+
+  def testListDisks_Filter(self):
+    """Unit test of ListDisks() with filter string."""
+    mock_api = self.mock_api_build.return_value
+    mock_disk_list = mock_api.disks.return_value.list
+
+    mock_disk_list.return_value.execute.return_value = {
+        'items': ['dummy', 'list']
+    }
+
+    disk_list = self.gce_api.ListDisks('filter condition')
+
+    mock_disk_list.assert_called_once_with(
+        project='project-name', zone='zone-name', filter='filter condition')
+    mock_disk_list.return_value.execute.assert_called_once_with()
+    self.assertEqual(['dummy', 'list'], disk_list)
+
+  def testDeleteDisk(self):
+    """Unit test of DeleteDisk()."""
+    mock_api = self.mock_api_build.return_value
+    mock_disk_delete = mock_api.disks.return_value.delete
+
+    self.assertTrue(self.gce_api.DeleteDisk('disk-name'))
+
+    mock_disk_delete.assert_called_once_with(
+        project='project-name', zone='zone-name', disk='disk-name')
+    mock_disk_delete.return_value.execute.assert_called_once_with()
+
+  def testCreateInstanceWithNewPersistentBootDisk_Success(self):
+    """Unit test of CreateInstanceWithNewPersistentBootDisk() with success."""
+    mock_api = self.mock_api_build.return_value
+    mock_operation_get = mock_api.zoneOperations.return_value.get
+    mock_operation_get.return_value.excute.return_value = {'status': 'Done'}
+    mock_disk_get = mock_api.disks.return_value.get
+    mock_disk_get.return_value.execute.side_effect = [
+        None,
+        {
+            'name': 'disk-name',
+            'status': 'READY'
+        }
+    ]
+    mock_disk_insert = mock_api.disks.return_value.insert
+    mock_disk_insert.return_value.execute.return_value = {
+        'name': 'disk-name'
+    }
+    mock_instance_insert = mock_api.instances.return_value.insert
     mock_instance_insert.return_value.execute.return_value = {
         'name': 'instance-name'
     }
 
-    self.assertTrue(self.gce_api.CreateInstance(
-        'instance-name', 'network', 'machine-type', 'image-name', 'zone-name'))
+    # Create parent mock and attach other mocks to it, so that we can
+    # track call order of all mocks.
+    parent_mock = mock.MagicMock()
+    parent_mock.attach_mock(mock_disk_insert, 'InsertDisk')
+    parent_mock.attach_mock(mock_instance_insert, 'InsertInstance')
 
-    mock_instance_insert.assert_called_once_with(
-        project='project-name', zone='zone-name', body=mock.ANY)
-    mock_instance_insert.return_value.execute.assert_called_once_with()
+    self.assertTrue(self.gce_api.CreateInstanceWithNewPersistentBootDisk(
+        'instance-name', 'network', 'machine-type', 'image-name'))
+    # Make sure disk insertion happens before instance insertion.
+    method_calls = parent_mock.method_calls.__iter__()
+    # Insert disk.
+    call = method_calls.next()
+    self.assertEqual('InsertDisk', call[0])
+    # Insert instance.
+    call = method_calls.next()
+    self.assertEqual('InsertInstance', call[0])
 
-  def testCreateInstance_SuccessWithWarning(self):
-    """Unit test of CreateInstance() with warning."""
+  def testCreateInstanceWithNewPersistentBootDisk_SuccessWithWarning(self):
+    """Unit test of CreateInstanceWithNewPersistentBootDisk() with warning."""
     mock_api = self.mock_api_build.return_value
+    mock_operation_get = mock_api.zoneOperations.return_value.get
+    mock_operation_get.return_value.excute.return_value = {'status': 'Done'}
+    mock_disk_get = mock_api.disks.return_value.get
+    mock_disk_get.return_value.execute.side_effect = [
+        None,
+        {
+            'name': 'disk-name',
+            'status': 'READY'
+        }
+    ]
+    mock_disk_insert = mock_api.disks.return_value.insert
+    mock_disk_insert.return_value.execute.return_value = {
+        'name': 'disk-name'
+    }
     mock_instance_insert = mock_api.instances.return_value.insert
-
     mock_instance_insert.return_value.execute.return_value = {
         'name': 'instance-name',
         'warnings': [
@@ -142,19 +222,31 @@ class GceApiTest(basetest.TestCase):
         ]
     }
 
-    # CreateInstance() returns True for warning.
-    self.assertTrue(self.gce_api.CreateInstance(
-        'instance-name', 'network', 'machine-type', 'image-name', 'zone-name'))
+    # CreateInstanceWithNewPersistentBootDisk() returns True for warning.
+    self.assertTrue(self.gce_api.CreateInstanceWithNewPersistentBootDisk(
+        'instance-name', 'network', 'machine-type', 'image-name'))
 
-    mock_instance_insert.assert_called_once_with(
-        project='project-name', zone='zone-name', body=mock.ANY)
+    mock_disk_insert.return_value.execute.assert_called_once_with()
     mock_instance_insert.return_value.execute.assert_called_once_with()
 
-  def testCreateInstance_Error(self):
-    """Unit test of CreateInstance() with error."""
+  def testCreateInstanceWithNewPersistentBootDisk_Error(self):
+    """Unit test of CreateInstanceWithNewPersistentBootDisk() with error."""
     mock_api = self.mock_api_build.return_value
+    mock_operation_get = mock_api.zoneOperations.return_value.get
+    mock_operation_get.return_value.excute.return_value = {'status': 'Done'}
+    mock_disk_get = mock_api.disks.return_value.get
+    mock_disk_get.return_value.execute.side_effect = [
+        None,
+        {
+            'name': 'disk-name',
+            'status': 'READY'
+        }
+    ]
+    mock_disk_insert = mock_api.disks.return_value.insert
+    mock_disk_insert.return_value.execute.return_value = {
+        'name': 'disk-name'
+    }
     mock_instance_insert = mock_api.instances.return_value.insert
-
     mock_instance_insert.return_value.execute.return_value = {
         'name': 'instance-name',
         'error': {
@@ -167,13 +259,39 @@ class GceApiTest(basetest.TestCase):
         }
     }
 
-    # CreateInstance() returns False.
-    self.assertFalse(self.gce_api.CreateInstance(
-        'instance-name', 'network', 'machine-type', 'image-name', 'zone-name'))
+    # CreateInstanceWithNewPersistentBootDisk() returns False.
+    self.assertFalse(self.gce_api.CreateInstanceWithNewPersistentBootDisk(
+        'instance-name', 'network', 'machine-type', 'image-name'))
 
-    mock_instance_insert.assert_called_once_with(
-        project='project-name', zone='zone-name', body=mock.ANY)
+    mock_disk_insert.return_value.execute.assert_called_once_with()
     mock_instance_insert.return_value.execute.assert_called_once_with()
+
+  def testCreateInstanceWithNewPersistentBootDisk_FailForExistingDisk(self):
+    """Unit test of CreateInstanceWithNewPersistentBootDisk with a disk failure.
+
+    In this test, a new persistent boot disk fails to be created due to the
+    existence of a dis kwith the same name.
+    """
+    mock_api = self.mock_api_build.return_value
+    mock_operation_get = mock_api.zoneOperations.return_value.get
+    mock_operation_get.return_value.excute.return_value = {'status': 'Done'}
+    mock_disk_get = mock_api.disks.return_value.get
+    mock_disk_get.return_value.execute.return_value = {
+        'name': 'disk-name',
+    }
+    mock_disk_insert = mock_api.disks.return_value.insert
+    mock_disk_insert.return_value.execute.return_value = {
+        'name': 'disk-name'
+    }
+    mock_instance_insert = mock_api.instances.return_value.insert
+    mock_instance_insert.return_value.execute.return_value = {
+        'name': 'instance-name'
+    }
+
+    self.assertFalse(self.gce_api.CreateInstanceWithNewPersistentBootDisk(
+        'instance-name', 'network', 'machine-type', 'image-name'))
+    self.assertFalse(mock_disk_insert.called)
+    self.assertFalse(mock_instance_insert.called)
 
   def testDeleteInstance(self):
     """Unit test of DeleteInstance()."""

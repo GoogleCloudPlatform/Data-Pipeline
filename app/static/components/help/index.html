@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html class="google" lang="en" ng-app="help">
+  <head>
+    <title>Data Pipeline: Documentation</title>
+    <script>
+      (function(H){H.className=H.className.replace(/\bgoogle\b/,'google-js')})(document.documentElement)
+    </script>
+    <meta charset="utf-8">
+    <meta content="initial-scale=1, minimum-scale=1, width=device-width" name="viewport">
+    <script src="//www.google.com/js/google.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js">
+    </script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-resource.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-route.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-sanitize.min.js"></script>
+    <script src="/static/jquery.layout-latest.min.js"></script>
+
+    <script src="/static/init.js"></script>
+    <script src="/static/components/help/help.js"></script>
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:300,400,600,700&amp;lang=en" rel="stylesheet">
+    <link rel="stylesheet" href="//www.google.com/css/maia.css">
+    <link rel="stylesheet" href="/static/components/help/help.css"/>
+    <link rel="stylesheet" href="/static/app.css"/>
+  </head>
+  <body ng-controller="HelpCtrl">
+    <div class="maia-header" id="maia-header" role="banner">
+      <div class="maia-aux">
+        <h1>
+          <a href="../">Data Pipeline: Documentation</a>
+        </h1>
+        <a class="maia-teleport" href="#content">Skip to content</a>
+      </div>
+    </div>
+    <div id="maia-main" role="main">
+      <div class="maia-teleport" id="content">
+        <div class="maia-col-2 help-list">
+          <ul>
+            <li><a href="/help/overview">Overview</a></li>
+            <li><a href="/help/installation">Installation</a></li>
+            <li><a href="/help/usage">Usage</a></li>
+            <li><a href="/help/stages">Stages</a></li>
+            <li><a href="/help/examples">Examples</a></li>
+            <li><a href="/help/cloudhistory">Cloud History</a></li>
+            <li><a href="/help/changelog">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="maia-col-10">
+          <div class="help-content" ng-view>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="//www.google.com/js/maia.js"></script>
+</body>
+</html>

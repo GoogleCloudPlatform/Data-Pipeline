@@ -49,6 +49,22 @@ class ColumnTypes(object):
     return ColumnTypes.strings.get(idx, 'UNKNOWN_TYPE')
 
 
+class SourceFormatTypes(object):
+  """The types of BigQuery Input source formats."""
+
+  CSV_FORMAT = 'CSV'
+  JSON_FORMAT = 'NEWLINE_DELIMITED_JSON'
+  DEFAULT_FORMAT = CSV_FORMAT
+
+  strings = collections.OrderedDict(
+      ((CSV_FORMAT, 'CSV'),
+       (JSON_FORMAT, 'NEWLINE_DELIMITED_JSON')))
+
+  @staticmethod
+  def ToString(idx):
+    return SourceFormatTypes.strings.get(idx, 'UNKNOWN_TYPE')
+
+
 class BigQueryError(Exception):
   pass
 
@@ -56,6 +72,7 @@ class BigQueryError(Exception):
 class BigQuery(object):
   """A class for accessing bigquery."""
   AUTH_SCOPE = 'https://www.googleapis.com/auth/bigquery'
+  DATASTORE = 'DATASTORE_BACKUP'
 
   def __init__(self, project_id):
     """Create a BigQuery class.
@@ -97,10 +114,24 @@ class BigQuery(object):
     return None
 
   def CreateTable(self, dataset_id, table_name, fields, src_file,
-                  source_format='CSV', skip_leading_rows=0):
+                  source_format=None,
+                  skip_leading_rows=0):
     """Create a table in a dataset in BigQuery."""
     try:
       job_collection = self.bigquery.jobs()
+
+      verified_source_format = None
+
+      if source_format is None:
+        verified_source_format = SourceFormatTypes.DEFAULT_FORMAT
+      else:
+        verified_source_format = SourceFormatTypes.ToString(
+            source_format.upper())
+        if verified_source_format == 'UNKNOWN_TYPE':
+          logging.error('Invalid BigQuery source format: %s.',
+                        source_format)
+          raise BigQueryError('BigQuery import abandoned: '
+                              'invalid source format.')
 
       logging.info('table fields are: %r', fields)
 
@@ -109,7 +140,7 @@ class BigQuery(object):
           'configuration': {
               'load': {
                   'sourceUris': [src_file],
-                  'sourceFormat': source_format,
+                  'sourceFormat': verified_source_format,
                   'schema': {
                       'fields': fields,
                       },
@@ -138,7 +169,7 @@ class BigQuery(object):
         logging.info('job is : %s', pprint.pformat(job))
 
         if 'DONE' == job['status']['state']:
-          logging.info('Done Loading!')
+          logging.info('Done Loading! Stats: %r', job.get('statistics'))
           return True
         if 'errorResult' in job['status']:
           logging.error('Error loading table: %s', pprint.pformat(job))
@@ -161,7 +192,7 @@ class BigQuery(object):
                                     tableId=table_id).execute()
       return True
     except HttpError as err:
-      logging.error('Error in GetTable: %s', pprint.pformat(err.content))
+      logging.error('Error in DeleteTable: %s', pprint.pformat(err.content))
     return False
 
   def GetTable(self, dataset_id, table_id):
@@ -172,8 +203,13 @@ class BigQuery(object):
                                          tableId=table_id).execute()
       return table
     except HttpError as err:
-      logging.error('Error in GetTable: %s', pprint.pformat(err.content))
-    return None
+      error = json.loads(err.content).get('error')
+      if error and error.get('code') == 404:
+        logging.info('GetTable: %s.%s not found', dataset_id, table_id)
+        return None
+      else:
+        logging.error('Error in GetTable: %s', pprint.pformat(err.content))
+        raise err
 
   def Query(self, query,
             table_info=None, offset=0, max_results=100, timeout=0):
@@ -190,25 +226,27 @@ class BigQuery(object):
       A tuple of table ID, table schema and query reply.
     """
     try:
-      logging.info('timeout:%d', timeout)
-      job_collection = self.bigquery.jobs()
-      query_data = {'query': query, 'timeoutMs': timeout}
+      if table_info is None:
+        logging.info('timeout:%d', timeout)
+        job_collection = self.bigquery.jobs()
+        query_data = {'query': query, 'timeoutMs': timeout}
 
-      query_reply = job_collection.query(projectId=self.project_id,
-                                         body=query_data).execute()
+        query_reply = job_collection.query(projectId=self.project_id,
+                                           body=query_data).execute()
 
-      job_reference = query_reply['jobReference']
-      job_config = job_collection.get(**job_reference).execute()
-
-      while job_config['status']['state'] != 'DONE':
-        if 'errorResult' in job_config['status']:
-          logging.error('Job has failed.')
-          return
+        job_reference = query_reply['jobReference']
         job_config = job_collection.get(**job_reference).execute()
 
-      # query results are stored in a temp table, get the temp table config.
-      # This will let us paginate the results.
-      table_info = job_config['configuration']['query']['destinationTable']
+        while job_config['status']['state'] != 'DONE':
+          if 'errorResult' in job_config['status']:
+            logging.error('Job has failed.')
+            return
+          time.sleep(1)
+          job_config = job_collection.get(**job_reference).execute()
+
+        # query results are stored in a temp table, get the temp table config.
+        # This will let us paginate the results.
+        table_info = job_config['configuration']['query']['destinationTable']
 
       # TODO(user): Temp tables expire after 24 hours.
       # Recreate temp table if query is 24 hours old by finding out

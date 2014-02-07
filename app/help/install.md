@@ -63,7 +63,7 @@ curl -o - http://labix.org/download/python-dateutil/python-dateutil-1.5.tar.gz |
 (cd app; ln -s ../third_party/python-dateutil-1.5/dateutil dateutil)
 
 # jquery UI Layout
-curl -o app/static/js/jquery.layout-latest.min.js http://layout.jquery-dev.net/lib/js/jquery.layout-latest.min.js
+curl -o app/static/jquery.layout-latest.min.js http://layout.jquery-dev.net/lib/js/jquery.layout-latest.min.js
 
 # Google Application Utilities for Python
 curl -o - https://google-apputils-python.googlecode.com/files/google-apputils-0.4.0.tar.gz |
@@ -85,9 +85,9 @@ curl -o - https://pypi.python.org/packages/source/G/GoogleAppEngineCloudStorageC
 (cd app; ln -s ../third_party/GoogleAppEngineCloudStorageClient-1.8.3.1/cloudstorage)
 
 # Google App Engine MapReduce
-curl -o - https://pypi.python.org/packages/source/G/GoogleAppEngineMapReduce/GoogleAppEngineMapReduce-1.8.3.1.tar.gz |
+curl -o - https://pypi.python.org/packages/source/G/GoogleAppEngineMapReduce/GoogleAppEngineMapReduce-1.8.3.2.tar.gz |
     tar -zxv -C third_party -f -
-(cd app; ln -s ../third_party/GoogleAppEngineMapReduce-1.8.3.1/mapreduce)
+(cd app; ln -s ../third_party/GoogleAppEngineMapReduce-1.8.3.2/mapreduce)
 
 # JSON.Minify
 curl -o third_party/jsonminify.zip https://codeload.github.com/getify/JSON.minify/zip/master
@@ -126,6 +126,10 @@ curl -o - https://pypi.python.org/packages/source/M/Markdown/Markdown-2.2.0.tar.
 curl -o - https://bitbucket.org/birkenfeld/pygments-main/get/1.5.tar.gz |
     tar -zxv -C third_party -f -
 (cd app; ln -s ../third_party/birkenfeld-pygments-main-eff3aee4abff/pygments)
+
+# Now verify that everything was installed correctly.
+# You should have no hanging symlinks.
+ls -ldL app/*
 ```
 
 ### Unit Tests

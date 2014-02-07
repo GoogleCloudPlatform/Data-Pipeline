@@ -22,6 +22,7 @@ import sys
 import types
 
 import jinja2
+from jinja2 import exceptions as jinja2_exceptions
 from jsonminify import minify_json
 
 from google.appengine.api import app_identity
@@ -34,6 +35,7 @@ class PipelineLinter(object):
 
   VALID_ROOT_KEYS = set(('inputs', 'outputs', 'transforms', 'options'))
   CHECK_SYNTAX_VALID = 'SyntaxValid'
+  CHECK_TEMPLATE_VALID = 'TemplateValid'
   CHECK_REQ_IO_STAGES = 'HasOneInputOrOutputStage'
   CHECK_UNKNOWN_CONFIG_KEYS = 'NoUnknownKeys'
   MSG_MISSING_IO_STAGES = 'Must have at least one "inputs" or "outputs" stage.'
@@ -78,31 +80,34 @@ class PipelineLinter(object):
   def ExpandTemplateVariables(self):
     template_variables = self.GetTemplateVariables()
     config_json = json.dumps(self.config, indent=2, separators=(',', ': '))
-    config_json = jinja2.Template(config_json).render(template_variables)
+    try:
+      config_json = jinja2.Template(config_json).render(template_variables)
+    except jinja2_exceptions.TemplateSyntaxError as err:
+      self.results.AddCheckResults(self.CHECK_TEMPLATE_VALID, False, str(err))
+    self.results.AddCheckResults(self.CHECK_TEMPLATE_VALID, True)
     return config_json
 
   def GetTemplateVariables(self):
     """Return the values that can be used as jinja variables in templates."""
     today = datetime.date.today()
-    options = self.config.get('options', {})
-    storage = copy.deepcopy(options.get('storage', {}))
+    options = copy.deepcopy(self.config.get('options', {}))
+    storage = options.get('storage', {})
     UpdateNestedDict(storage, {'bucket': '', 'prefix': ''})
     storage['url'] = 'gs://%s/%s' % (storage['bucket'], storage['prefix'])
 
-    app = {
-        'id': app_identity.get_application_id(),
-        'hostname': app_identity.get_default_version_hostname(),
-        'serviceAccountName': app_identity.get_service_account_name(),
-        }
-
-    return {
-        'app': app,
+    UpdateNestedDict(options, {
+        'app': {
+            'id': app_identity.get_application_id(),
+            'hostname': app_identity.get_default_version_hostname(),
+            'serviceAccountName': app_identity.get_service_account_name(),
+            },
         'storage': storage,
         'date': {
             'y-m-d': today.strftime('%Y-%m-%d'),
             'ymd': today.strftime('%Y%m%d'),
             },
-        }
+        })
+    return options
 
   def SyntaxCheck(self, config_json, phase=None):
     """Ensure the config string is valid JSON and is loadable in to a dict.
@@ -300,7 +305,7 @@ class LintResults(object):
     self.valid = self.valid and check.valid
     if 'stages' not in self.results:
       self.results['stages'] = {category: [check.results]}
-    elif 'category' not in self.results['stages']:
+    elif category not in self.results['stages']:
       self.results['stages'][category] = [check.results]
     else:
       self.results['stages'][category].append(check.results)

@@ -54,25 +54,6 @@ ulimit -n 32768
 echo hadoop soft nofile 32768 >> /etc/security/limits.conf
 echo hadoop hard nofile 32768 >> /etc/security/limits.conf
 
-declare -r HADOOP_ROOT=/hadoop
-
-# Get disk ID from metadata and decide which device to mount for Hadoop data.
-# It might be persistent or scratch disk.
-declare -r DISK_DEVICE=/dev/disk/by-id/$(get_metadata_value disk-id)
-
-# Make mount point.
-mkdir -p $HADOOP_ROOT
-
-/usr/share/google/safe_format_and_mount -m "mkfs.ext4 -F"  \
-    $DISK_DEVICE $HADOOP_ROOT
-
-if [ -d $HADOOP_ROOT/hdfs ] ; then
-  # hdfs directory already exists.  The disk was already formatted.
-  FIRST_TIME_MOUNT=0
-else
-  FIRST_TIME_MOUNT=1
-fi
-
 # Set up user and group
 # Since Hadoop uses SSH for the communication between master and workers,
 # we need to have the same UID/GID values among all machines in the cluster.
@@ -81,6 +62,8 @@ groupadd --gid $HADOOP_GROUP_ID hadoop
 useradd --uid $HADOOP_USER_ID --gid hadoop --shell /bin/bash -m hadoop
 
 # Prepare directories
+declare -r HADOOP_ROOT=/hadoop
+mkdir -p $HADOOP_ROOT
 mkdir -p $HADOOP_ROOT/hdfs/name
 mkdir -p $HADOOP_ROOT/hdfs/data
 mkdir -p $HADOOP_ROOT/checkpoint

@@ -209,7 +209,7 @@ def ReadTransformWriteRows(config, csv_reader, csv_writer,
       if badrows_file:
         transform.WriteErrors(badrows_file,
                               transform.CellsToCsvString(row), bad_cols)
-      row_count += 1
+    row_count += 1
     if finished_func and finished_func():
       break
   return (row_count, bad_row_count)

@@ -1,0 +1,22 @@
+<div class="pipeline-list"
+     ng-controller="PipelineListCtrl as pipelineListCtrl">
+  <div class="centered-horizontal">
+    <button ng-click="pipelineListCtrl.Pipelines.create();"
+            class="maia-button">Create Pipeline</button>
+  </div>
+  <div class="pipeline-list-items">
+    <div class="pipeline-list-search centered-horizontal"
+         ng-show="pipelineListCtrl.showSearch()">
+      <input type="search" ng-model="pipelineListCtrl.pipelineListSearch">
+    </div>
+    <div class="pipeline-list-item"
+         ng-class="{selected: pipelineListCtrl.Pipelines.selected == p}"
+         ng-repeat="p in pipelineListCtrl.Pipelines.pipelines |
+                    filter:pipelineListCtrl.pipelineListSearch |
+                    orderBy:'name'">
+      <div title="{{p.name}}"
+           class="pipeline-name"
+           ng-click="pipelineListCtrl.select(p)">{{p.name || 'new pipe'}}</div>
+    </div>
+  </div>
+</div>

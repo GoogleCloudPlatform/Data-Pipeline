@@ -23,8 +23,10 @@ from lib.crud import crud_handler
 from src.handlers import helphandler
 from src.handlers import linthandler
 from src.handlers import runhandler
+from src.handlers import variablehandler
 from src.model import appconfig
 from src.model import pipeline
+from src.model import runstat
 from src.model import user
 
 
@@ -38,9 +40,11 @@ class OkHandler(webapp2.RequestHandler):
 main = webapp2.WSGIApplication([
     ('/data/ok', OkHandler),
     ('/data/pipeline.*', crud_handler.GetCrudHandler(pipeline.Pipeline)),
+    ('/data/runstat.*', crud_handler.GetCrudHandler(runstat.RunStat)),
     ('/data/user.*', crud_handler.GetCrudHandler(user.User)),
     ('/data/appconfig.*', crud_handler.GetCrudHandler(appconfig.AppConfig)),
     ('/data/help.*', helphandler.HelpHandler),
+    ('/data/variables.*', variablehandler.VariableHandler),
     ])
 
 runner = webapp2.WSGIApplication([

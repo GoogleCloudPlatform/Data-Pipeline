@@ -33,9 +33,10 @@ class GceApi(object):
   """Google Client API wrapper for Google Compute Engine."""
 
   COMPUTE_ENGINE_SCOPE = 'https://www.googleapis.com/auth/compute'
-  COMPUTE_ENGINE_API_VERSION = 'v1beta15'
+  COMPUTE_ENGINE_API_VERSION = 'v1'
   OPERATION_WAIT_INTERVAL = 3
   DEFAULT_OPERATION_WAIT_TIMEOUT = 120
+  PERSISTENT_DISK_SIZE_GB = 100
 
   def __init__(self, project, zone=None, authorized_http=None):
     """Constructor.
@@ -105,17 +106,7 @@ class GceApi(object):
 
     return self.ResourceUrlFromPath(resource_path)
 
-  def _PersistentDiskUrl(self, disk):
-    """Creates URL to represent persistent disk.
-
-    Args:
-      disk: Name of the persistent disk.
-    Returns:
-      URL in string to represent the persistent disk.
-    """
-    return self.ResourceUrl('disks', disk)
-
-  def _ParseOperationInternal(self, operation, title):
+  def _ParseOperation(self, operation, title):
     """Parses operation result and log warnings and errors if any.
 
     Args:
@@ -138,53 +129,6 @@ class GceApi(object):
                         w.get('message', 'NO WARNING MESSAGE'))
     return True
 
-  def _WaitForOperationCompletion(self, operation_name,
-                                  timeout=DEFAULT_OPERATION_WAIT_TIMEOUT):
-    """Waits for zone-level operation to finish.
-
-    Zone-level operation is an operation for zone-level resource, such as
-    instance and persistent disk.
-
-    Args:
-      operation_name: Name of the operation to get information about.
-      timeout: Maximum seconds to wait.
-    Returns:
-      Google Compute Engine operation resource.  None if timeout.
-      https://developers.google.com/compute/docs/reference/v1beta15/operations
-    """
-    total_wait = 0
-    while total_wait < timeout:
-      logging.info('Wait for %d seconds for operation %s to complete.',
-                   self.OPERATION_WAIT_INTERVAL, operation_name)
-      time.sleep(self.OPERATION_WAIT_INTERVAL)
-      total_wait += self.OPERATION_WAIT_INTERVAL
-      operation = self.GetZoneOperation(operation_name)
-      if operation['status'] == 'DONE':
-        return operation
-    return None
-
-  def _ParseOperation(self, operation, title, wait=False,
-                      timeout=DEFAULT_OPERATION_WAIT_TIMEOUT):
-    """Waits for the operation completion if necessary, and parses the result.
-
-    Args:
-      operation: Operation object as result of operation.
-      title: Title used for log.
-      wait: Whether to wait for the operation to finish.
-      timeout: Maximum seconds to wait.
-    Returns:
-      Boolean to indicate whether the operation was successful.
-    """
-    if wait:
-      complete_operation = self._WaitForOperationCompletion(
-          operation['name'], timeout)
-      if complete_operation is None:
-        logging.error('Operation %s (%s) time out.', title, operation['name'])
-        return False
-      return self._ParseOperationInternal(complete_operation, title)
-    else:
-      return self._ParseOperationInternal(operation, title)
-
   def GetZoneOperation(self, operation_name):
     """Gets information of zone specific operation.
 
@@ -192,7 +136,7 @@ class GceApi(object):
       operation_name: Name of the operation to get information about.
     Returns:
       Google Compute Engine operation resource.  None if error.
-      https://developers.google.com/compute/docs/reference/v1beta15/operations
+      https://developers.google.com/compute/docs/reference/latest/zoneOperations
     """
     return self.GetApi().zoneOperations().get(
         project=self._project, zone=self._zone,
@@ -205,7 +149,7 @@ class GceApi(object):
       instance_name: Name of the instance to get information about.
     Returns:
       Google Compute Engine instance resource.  None if not found.
-      https://developers.google.com/compute/docs/reference/v1beta15/instances
+      https://developers.google.com/compute/docs/reference/latest/instances
     Raises:
       HttpError on error, except for 'resource not found' error.
     """
@@ -222,7 +166,7 @@ class GceApi(object):
     """Lists instances that matches filter condition.
 
     Format of filter string can be found in the following URL.
-    http://developers.google.com/compute/docs/reference/v1beta15/instances/list
+    http://developers.google.com/compute/docs/reference/latest/instances/list
 
     Args:
       filter_string: Filtering condition.
@@ -234,35 +178,61 @@ class GceApi(object):
         filter=filter_string).execute()
     return result.get('items', [])
 
-  def CreateInstance(self, instance_name, network, machine_type, image,
-                     persistent_disk=None, startup_script='',
-                     service_accounts=None, metadata=None, wait=False):
+  def CreateInstanceWithNewPersistentBootDisk(
+      self, instance_name, network, machine_type, image, startup_script='',
+      service_accounts=None, metadata=None):
     """Creates Google Compute Engine instance.
+
+    The boot disk is created with the same name as the instance. When the disk
+    is ready, an instance is created with the disk as its boot disk.
 
     Args:
       instance_name: Name of the new instance.
       network: Network which the instance belongs to.  e.g. 'default'
       machine_type: Machine type.  e.g. 'n1-standard-2'
       image: Machine image name with its project name.
-          e.g. 'projects/debian-cloud/global/images/debian-7-wheezy-v20130515'
-      persistent_disk: Name of the additional persistent disk.  The disk must
-          preexist and must sit in the same zone as the instance.  None if the
-          new instance does not have persistent disk attached.
+          e.g. 'projects/debian-cloud/global/images/debian-7-wheezy-v20131120'
       startup_script: Content of start up script to run on the new instance.
       service_accounts: List of scope URLs to give to the instance with
           the service account.
       metadata: Additional key-value pairs in dictionary to add as
           instance metadata.
-      wait: Whether to wait for the operation to finish.
     Returns:
       Boolean to indicate whether the instance creation was successful.
     """
+    # Use the instance name as the disk name.
+    disk_name = instance_name
+    if not self._CreatePersistentBootDisk(disk_name, image):
+      return False
+    # Wait until the new persistent disk is READY.
+    for _ in xrange(self.DEFAULT_OPERATION_WAIT_TIMEOUT):
+      logging.info('Waiting for boot disk %s getting ready...', disk_name)
+      time.sleep(self.OPERATION_WAIT_INTERVAL)
+      disk_status = self.GetDisk(disk_name)
+      if disk_status.get('status', None) == 'READY':
+        logging.info('Disk %s created successfully.', disk_name)
+        break
+    else:
+      logging.error('Persistent disk %s creation timed out.', disk_name)
+      return False
+
     params = {
         'kind': 'compute#instance',
         'name': instance_name,
         'zone': self.ResourceUrl('zones', self._zone, ResourceZoning.NONE),
         'machineType': machine_type,
-        'image': image,
+        'disks': [
+            {
+                'boot': True,
+                'deviceName': disk_name,
+                'kind': 'compute#attachedDisk',
+                'mode': 'READ_WRITE',
+                'source': self.ResourceUrl('disks', disk_name),
+                'type': 'PERSISTENT',
+                'zone':
+                    self.ResourceUrl('zones', self._zone, ResourceZoning.NONE),
+            },
+        ],
         'metadata': {
             'kind': 'compute#metadata',
             'items': [
@@ -294,17 +264,6 @@ class GceApi(object):
         ],
     }
 
-    # Attach persistent disk.
-    if persistent_disk:
-      params['disks'] = [{
-          'kind': 'compute#attachedDisk',
-          'deviceName': persistent_disk,
-          'zone': self.ResourceUrl('zones', self._zone, ResourceZoning.NONE),
-          'source': self._PersistentDiskUrl(persistent_disk),
-          'type': 'PERSISTENT',
-          'mode': 'READ_WRITE',
-      }]
-
     # Add metadata.
     if metadata:
       for key, value in metadata.items():
@@ -314,12 +273,8 @@ class GceApi(object):
         project=self._project, zone=self._zone,
         body=params).execute()
 
-    if wait:
-      return self._WaitForOperationCompletion(
-          operation['name'], 'Instance creation: %s' % instance_name)
-    else:
-      return self._ParseOperation(
-          operation, 'Instance creation: %s' % instance_name, wait=wait)
+    return self._ParseOperation(
+        operation, 'Instance creation: %s' % instance_name)
 
   def DeleteInstance(self, instance_name):
     """Deletes Google Compute Engine instance.
@@ -336,6 +291,22 @@ class GceApi(object):
     return self._ParseOperation(
         operation, 'Instance deletion: %s' % instance_name)
 
+  def ListDisks(self, filter_string=None):
+    """Lists disks that matches filter condition.
+
+    Format of filter string can be found in the following URL.
+    http://developers.google.com/compute/docs/reference/latest/disks/list
+
+    Args:
+      filter_string: Filtering condition.
+    Returns:
+      List of compute#disk.
+    """
+    result = self.GetApi().disks().list(
+        project=self._project, zone=self._zone,
+        filter=filter_string).execute()
+    return result.get('items', [])
+
   def GetDisk(self, disk_name):
     """Gets persistent disk information.
 
@@ -343,7 +314,7 @@ class GceApi(object):
       disk_name: Name of the persistent disk to get information about.
     Returns:
       Google Compute Engine disk resource.  None if not found.
-      https://developers.google.com/compute/docs/reference/v1beta15/disks
+      https://developers.google.com/compute/docs/reference/latest/disks
     Raises:
       HttpError on error, except for 'resource not found' error.
     """
@@ -356,26 +327,47 @@ class GceApi(object):
         return None
       raise e
 
-  def CreatePersistentDisk(self, name, size_gb, wait=False):
+  def DeleteDisk(self, disk_name):
+    """Deletes Google Compute Engine persistent disk.
+
+    Args:
+      disk_name: Name of the disk to delete.
+    Returns:
+      Boolean to indicate whether the disk deletion was successful.
+    """
+    operation = self.GetApi().disks().delete(
+        project=self._project, zone=self._zone,
+        disk=disk_name).execute()
+
+    return self._ParseOperation(
+        operation, 'Disk deletion: %s' % disk_name)
+
+  def _CreatePersistentBootDisk(self, disk_name, image):
     """Creates persistent disk in the zone of this API.
 
     Args:
-      name: Name of the new persistent disk.
-      size_gb: Size of the new persistent disk in GB.
-      wait: Whether to wait for the operation to finish.
+      disk_name: Name of the persistent disk.
+      image: Machine image name with its project name.
+          e.g. 'projects/debian-cloud/global/images/debian-7-wheezy-v20131120'
     Returns:
-      Boolean to indicate whether persistent disk creation was successful.
+      Boolean to indicate whether a new persistent disk creation was successful.
     """
+    if self.GetDisk(disk_name):
+      logging.error('Disk %s already exists', disk_name)
+      return False
+
+    logging.info('Create persistent disk %s', disk_name)
     params = {
         'kind': 'compute#disk',
-        'sizeGb': '%d' % size_gb,
-        'name': name,
+        'sizeGb': '%d' % self.PERSISTENT_DISK_SIZE_GB,
+        'name': disk_name,
     }
+    source_image = self.ResourceUrlFromPath(image) if image else None
     operation = self.GetApi().disks().insert(
         project=self._project, zone=self._zone,
-        body=params).execute()
+        body=params, sourceImage=source_image).execute()
     return self._ParseOperation(
-        operation, 'Persistent disk creation %s' % name, wait=wait)
+        operation, 'Persistent disk creation %s' % disk_name)
 
   def ListZones(self, project=None, filter_string=None):
     result = self.GetApi().zones().list(

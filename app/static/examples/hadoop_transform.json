@@ -4,9 +4,9 @@
       "type": "HadoopCsvMatchReplace",
       "fieldDelimiter": ",",
       "skipLeadingRows": 1,
-      "hadoopTmpDir": "gs://{{ storage.bucket }}/tmp",
-      "sources": ["gs://{{ storage.bucket }}/test_csv.csv"],
-      "sinks": ["gs://{{ storage.bucket }}/transformoutput.csv"],
+      "hadoopTmpDir": "gs://{{storage.bucket}}/tmp",
+      "sources": ["gs://{{storage.bucket}}/test_csv.csv"],
+      "sinks": ["gs://{{storage.bucket}}/transformoutput.csv"],
       "columns": [
         {
           "wanted": false,

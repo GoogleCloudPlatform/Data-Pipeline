@@ -28,11 +28,9 @@ from src.model import pipeline
 from src.pipelines import linter
 from src.pipelines import runner
 
-BACKEND_URL = '/backend/run'
-
 
 class RunHandler(basehandler.RequestHandler):
-  """A super simple handler that prints out ok to show it's working."""
+  """Runs a pipeline."""
 
   def get(self, path):
     return self.post(path)
@@ -64,16 +62,17 @@ class RunHandler(basehandler.RequestHandler):
   def RunPipeline(self, p):
     """Run the pipeline."""
     logging.info('Linting pipeline: %s', p.name)
-    pl = linter.PipelineLinter(
-        p.config,
-        appconfig.AppConfig.GetAppConfig().AsOptionsDict())
-    results = pl.results
-    if not results.valid:
-      self.BadRequest('Linting for pipeline [%s] FAILED.\n%s',
-                      p.name, pl.results)
+    options_dict = appconfig.AppConfig.GetAppConfig().AsOptionsDict()
+    self.expandOptionsDict(options_dict, self.GetAllArguments())
+    logging.info('options_dict is:\n%r', options_dict)
+    logging.info('input config is:\n%s', p.config)
+    pl = linter.PipelineLinter(p.config, options_dict)
+    if not pl.results.valid:
+      self.BadRequest('Linting for pipeline [%s] FAILED.\n%r',
+                      p.name, pl.results.results)
       return
 
-    logging.info('Running pipeline: %s', p.name)
+    logging.info('Running pipeline: %s with config\n%s', p.name, pl.config)
     config = pl.config
 
     storage = config.get('options', {}).get(appconfig.OPTIONS_STORAGE_KEY, {})
@@ -86,4 +85,38 @@ class RunHandler(basehandler.RequestHandler):
     pipe.start()
     p.running_pipeline_ids.append(pipe.pipeline_id)
     p.put()
-    self.redirect('/_ah/pipeline/status?root=%s' % pipe.pipeline_id)
+    # show the status page using the default frontend module
+    url = urlparse.urljoin(self.GetModuleUrl('default'),
+                           '/_ah/pipeline/status?root=%s' % pipe.pipeline_id)
+    self.redirect(str(url))
+
+  def GetAllArguments(self):
+    """Get all the arguments from the request and put them into a dict."""
+    arguments = self.request.arguments()
+    return dict(zip(arguments, [self.request.get(x) for x in arguments]))
+
+  @staticmethod
+  def expandOptionsDict(options, arguments):
+    """Add values to an options dict from the url paramters in arguments.
+
+    This method will create dictionaries if arguments have periods in them
+
+    so storage.api and storage.user will make an object called storage
+    with two keys of api and user.
+
+    Args:
+      options: a current set of options to update (json dict structure)
+
+      arguments: a flat dict of key/value pairs. key's might have
+          periods to indicate structure to be created.
+    """
+    for key, value in arguments.items():
+      key_parts = key.split('.')
+      obj = options
+      try:
+        for idx in range(len(key_parts) - 1):
+          obj = options.setdefault(key_parts[idx], {})
+        obj[key_parts[-1]] = value
+      except TypeError as err:
+        logging.error('unable to overwrite key %r with value %r because %r '
+                      'is not a dict (%r)', key, value, obj, err)

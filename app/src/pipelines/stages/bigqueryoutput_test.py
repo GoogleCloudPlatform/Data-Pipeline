@@ -52,7 +52,38 @@ class BigQueryOutputTest(basetest.TestCase):
 
     mock_bq.CreateDataset.assert_called_once_with('ark')
     mock_bq.CreateTable.assert_called_once_with('ark', 'arktable', [],
-                                                'gs://test/example')
+                                                'gs://test/example',
+                                                source_format=None)
+
+  def testRunSourceFormat(self):
+    config = {
+        'destinationTable': {
+            'projectId': '99',
+            'datasetId': 'ark',
+            'tableId': 'arktable'
+            },
+        'sourceFormat': 'ChrisSpecialValues',
+        'schema': {
+            'fields': []
+            },
+        'sources': ['gs://test/example']
+        }
+    mock_bq = mock.MagicMock()
+    bigquery.BigQuery.return_value = mock_bq
+
+    mock_bq.CreateDataset.return_value(None)
+    mock_bq.CreateTable.return_value(None)
+
+    with mock.patch.object(bigquery,
+                           'BigQuery',
+                           return_value=mock_bq):
+      bqo = bigqueryoutput.BigQueryOutput(config)
+      bqo.start_test()
+
+    mock_bq.CreateDataset.assert_called_once_with('ark')
+    mock_bq.CreateTable.assert_called_once_with(
+        'ark', 'arktable', [], 'gs://test/example',
+        source_format='ChrisSpecialValues')
 
 
 if __name__ == '__main__':

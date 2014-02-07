@@ -159,6 +159,24 @@ class GCSTest(basetest.TestCase):
       calls = [call_a, call_b, call_c, call_d]
       mock_objects.assert_has_calls(calls, any_order=True)
 
+  def testSplitEvenly(self):
+    self.assertEquals([6, 5],
+                      [len(x) for x in gcs.SplitEvenly(tuple(range(11)), 9)])
+    self.assertEquals([6, 5],
+                      [len(x) for x in gcs.SplitEvenly(tuple(range(11)), 6)])
+    self.assertEquals([4, 4, 3],
+                      [len(x) for x in gcs.SplitEvenly(tuple(range(11)), 5)])
+    self.assertEquals([1],
+                      [len(x) for x in gcs.SplitEvenly(tuple(range(1)), 5)])
+    self.assertEquals([1],
+                      [len(x) for x in gcs.SplitEvenly(tuple(range(1)), 99)])
+    self.assertEquals([1, 1],
+                      [len(x) for x in gcs.SplitEvenly(tuple(range(2)), 1)])
+    self.assertEquals([2],
+                      [len(x) for x in gcs.SplitEvenly(tuple(range(2)), 2)])
+    self.assertEquals([],
+                      [len(x) for x in gcs.SplitEvenly([], 2)])
+
 
 if __name__ == '__main__':
   basetest.main()
