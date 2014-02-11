@@ -65,7 +65,7 @@ datapipeline.components.download = function() {
 /**
  * Angular module.
  *
- * @type {angular.Module}
+ * @type {!angular.Module}
  */
 datapipeline.components.download.module = angular.module(
     'datapipeline.components.download', []).

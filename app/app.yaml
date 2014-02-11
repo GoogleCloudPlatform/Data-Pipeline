@@ -25,6 +25,15 @@ handlers:
   login: admin
   secure: always
 
+# On github, the image links are mapped to /Data-Pipeline/master/app/static/img/.
+# Use this for images that are required in both github and the app.
+# cloudhistory.md is such an example.
+- url: /app/static/(.*)
+  static_files: static/\1
+  upload: static/(.*)
+  login: admin
+  secure: always
+
 # /data/ urls are handled by the server.
 - url: /data/.*
   script: src.server.main

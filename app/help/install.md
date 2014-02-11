@@ -144,13 +144,15 @@ Engine SDK libraries in your Python path.
 GAE_PATH=/usr/local/google_appengine; export PYTHONPATH=$GAE_PATH:.; for fil in $GAE_PATH/lib/*; do export PYTHONPATH=$fil:$PYTHONPATH; done;
 ```
 
-
 You can run the unit tests with:
 
 ```shell
 (cd app; python -m unittest discover src '*_test.py')
 ```
 
+You may see some warnings, but you should end up seeing all the tests
+passed OK. The last thing printed out should be how many tests ran and
+then the text `OK`.
 
 ### Installation
 

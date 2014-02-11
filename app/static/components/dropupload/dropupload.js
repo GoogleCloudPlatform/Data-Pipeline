@@ -122,7 +122,7 @@ datapipeline.components.dropupload = function() {
 /**
  * Angular module.
  *
- * @type {angular.Module}
+ * @type {!angular.Module}
  */
 datapipeline.components.dropupload.module = angular.module(
     'datapipeline.components.dropupload', []).

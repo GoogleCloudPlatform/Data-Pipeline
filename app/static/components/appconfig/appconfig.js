@@ -80,7 +80,7 @@ AppConfig.prototype.revert = function() {
 /**
  * Angular module.
  *
- * @type {angular.Module}
+ * @type {!angular.Module}
  */
 datapipeline.components.appconfig.AppConfig.module = angular.module(
     'datapipeline.components.appconfig.AppConfig', [

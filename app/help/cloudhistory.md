@@ -17,7 +17,7 @@ can be captured as time series data and queried using BigQuery. [Sample
 BigQuery queries](#cookbook) are provided for you to get started on the
 analysis. The workflow is best illustrated with the following diagram:
 
-![Cloud Deployment History Architecture](/static/img/help/cloud_history_arch.png)
+![Cloud Deployment History Architecture](/app/static/img/help/cloud_history_arch.png)
 
 ## Data Pipelines
 
@@ -509,15 +509,12 @@ GROUP BY zoneName, snapshotId
 ORDER BY zoneName, snapshotId
 ```
 
-#### What is the disk configuration for the past 7 days ?
+#### What is the disk configuration at time X ?
 ```txt
-SELECT zoneName, snapshotId, SUM(sizeGb) totalSiz
+SELECT name, sizeGb, sourceSnapshotName, sourceImageName, sourceImageId
 FROM [cloud_history.Disks]
 WHERE
-  snapshotId >= DATE_ADD(CURRENT_TIMESTAMP(), -7, "DAY") AND
-  snapshotId <= CURRENT_TIMESTAMP()
-GROUP BY zoneName, snapshotId
-ORDER BY zoneName, snapshotId
+  snapshotId = TIMESTAMP("YYYY-MM-DD hh:mm:ss")
 ```
 
 #### What are the disks that are unused/unattached at time X ?

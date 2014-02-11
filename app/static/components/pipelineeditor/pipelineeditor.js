@@ -25,7 +25,7 @@ goog.scope(function() {
 /**
  * Pipeline controller.
  *
- * @param {angular.Scope} $scope
+ * @param {!angular.Scope} $scope
  * @param {angular.Timeout} $timeout
  * @param {angular.Window} $window
  * @param {datapipeline.components.butterbar.ButterBar} ButterBar service.

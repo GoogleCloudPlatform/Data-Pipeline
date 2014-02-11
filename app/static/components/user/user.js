@@ -71,7 +71,7 @@ User.prototype.addCallback = function(f) {
 /**
  * Angular module.
  *
- * @type {angular.Module}
+ * @type {!angular.Module}
  */
 datapipeline.components.user.User.module = angular.module(
     'datapipeline.components.user.User', [

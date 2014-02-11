@@ -81,7 +81,7 @@ ButterBar.prototype.finishWork = function(workId) {
 /**
  * Angular module.
  *
- * @type {angular.Module}
+ * @type {!angular.Module}
  */
 datapipeline.components.butterbar.ButterBar.module = angular.module(
     'datapipeline.components.butterbar.ButterBar', []).

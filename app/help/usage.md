@@ -202,6 +202,21 @@ the `src.pipelines.ShardStage` class. This class has utility methods to
 automatically split up work into shards, run them all in parallel and then
 compose the resulting files into a final sink file.
 
+### Data Sizes
+
+When you are processing a large amount of data, it's good to
+understand what is going on under the hood. If the work is shardable
+then the input file will be processed in chunks and each processing
+will produce a smaller chunk of processed data that is then
+[composited] into a single GCS file.
+
+Due to the limitations of compositing files in GCS if your work is
+split into too many chunks there will be a significant performance hit
+while Data Pipeline builds these back into a file for the next stage.
+
+Data Pipeline has successfully processed files as large as 5GB but has
+not yet had success with 100GB files.
+
 ### Debugging
 
 If something goes wrong, here are the steps to help find out what the problem
@@ -216,3 +231,4 @@ need to go to the backend module in the logs.
 [Google Cloud Storage Object Change Notification]: https://developers.google.com/storage/docs/object-change-notification
 [Google App Engine Modules]: https://developers.google.com/appengine/docs/python/modules/
 [GitHub Flavored Markdown]: http://github.github.com/github-flavored-markdown/
+[composited]: https://developers.google.com/storage/docs/composite-objects

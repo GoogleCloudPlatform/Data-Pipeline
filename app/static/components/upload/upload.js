@@ -68,7 +68,7 @@ datapipeline.components.upload = function() {
 /**
  * Angular module.
  *
- * @type {angular.Module}
+ * @type {!angular.Module}
  */
 datapipeline.components.upload.module = angular.module(
     'datapipeline.components.upload', []).

@@ -31,7 +31,7 @@ angular.module('datapipeline.components.help.HelpData', ['ngResource']).
  * Help controller.
  *
  * @param {angular.Location} $location
- * @param {angular.Scope} $scope
+ * @param {!angular.Scope} $scope
  * @param {datapipeline.components.help.HelpData} HelpData
  * @constructor
  * @ngInject
@@ -66,9 +66,9 @@ datapipeline.components.help.module = angular.module('help',
     ]);
 
 /** The route provider switches in templates to ng-view depending on path.
- * @param {angular.$routeProvider} $routeProvider The Angular route provider
+ * @param {!angular.$routeProvider} $routeProvider The Angular route provider
  *     service.
- * @param {angular.$locationProvider} $locationProvider The Angular location
+ * @param {!angular.$locationProvider} $locationProvider The Angular location
  *     provider service.
  */
 datapipeline.components.help.routeProvider = function($routeProvider,

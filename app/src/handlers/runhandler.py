@@ -51,10 +51,9 @@ class RunHandler(basehandler.RequestHandler):
       if users.is_current_user_admin():
         self.redirect(self.GetModuleUrl('backend'))
       else:
-        # Get the url without the hostname (Taskqueue likes it like that).
-        url = urlparse.urljoin('http://example.com/', self.request.url)
-        url = '/' + url.split('/', 3)[-1]
-        taskqueue.add(queue_name='backend', url=url, params={})
+        parsed = urlparse.urlparse(self.request.url)
+        taskqueue.add(queue_name='backend', url=parsed.path,
+                      params=urlparse.parse_qs(parsed.query))
       return
 
     self.RunPipeline(p)

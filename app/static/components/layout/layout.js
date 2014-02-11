@@ -46,7 +46,7 @@ datapipeline.components.layout = function($timeout) {
 /**
  * Angular module.
  *
- * @type {angular.Module}
+ * @type {!angular.Module}
  */
 datapipeline.components.layout.module = angular.module(
     'datapipeline.components.layout', []).

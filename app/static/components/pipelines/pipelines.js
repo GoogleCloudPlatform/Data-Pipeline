@@ -220,7 +220,7 @@ Pipelines.prototype.select = function(p) {
 /**
  * Angular module.
  *
- * @type {angular.Module}
+ * @type {!angular.Module}
  */
 datapipeline.components.pipelines.Pipelines.module = angular.module(
     'datapipeline.components.pipelines.Pipelines', [
